@@ -9,6 +9,7 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 
@@ -18,7 +19,6 @@ import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 import java.util.List;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
-import xyz.nin1275.utils.Motors;
 
 @Configurable
 @Config("autoAligningTest")
@@ -43,7 +43,10 @@ public class autoAligningTest extends LinearOpMode {
         leftFront.setDirection(DcMotorEx.Direction.REVERSE);
         leftRear.setDirection(DcMotorEx.Direction.REVERSE);
         // breaks
-        Motors.setBrakes(leftFront, rightFront, leftRear, rightRear);
+        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
