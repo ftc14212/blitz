@@ -11,7 +11,6 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
-import com.arcrobotics.ftclib.controller.PIDFController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -38,7 +37,7 @@ public class swerbe extends LinearOpMode {
     **/
     boolean debugMode = true;
     // PID controller
-    public static PIDFController pid = new PIDController(Math.sqrt(PIDTuneServo.P), PIDTuneServo.I, PIDTuneServo.D);
+    public static PIDController pid = new PIDController(Math.sqrt(PIDTuneServo.P), PIDTuneServo.I, PIDTuneServo.D);
     public static double mSpeed = 1;
     // pod offsets
     public static double rfOffset = 160;
@@ -50,22 +49,21 @@ public class swerbe extends LinearOpMode {
     double wa2 = 180; // RR reversed
     double wa3 = 180;   // LF straight
     double wa4 = 180; // LR reversed
-    // angles forward and strafe
+    // angles forward
     double lfF = 180;
-    double lfS = 85;
     double rfF = 180;
-    double rfS = 92;
     double lrF = 180;
-    double lrS = 88;
     double rrF = 180;
+    // angles strafe
+    double lfS = 85;
+    double rfS = 92;
+    double lrS = 88;
     double rrS = 90;
     @Override
     public void runOpMode() {
+        // hardware
         telemetry = new MultipleTelemetry(this.telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
-        telemetryM.addLine("Metrobotics Team 14212!");
-        telemetryM.addLine(true, "INIT DONE!");
-        telemetryM.update();
         // motors
         CachingDcMotorEx leftFront = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "leftFront"));
         CachingDcMotorEx leftRear = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "leftRear"));
@@ -87,9 +85,14 @@ public class swerbe extends LinearOpMode {
         pid.reset();
         // turn on servos
         lf.setPower(0);
+        // telemetry
+        telemetryM.addLine("Metrobotics Team 14212!");
+        telemetryM.addLine(true, "INIT DONE!");
+        telemetryM.update();
         waitForStart();
         if (opModeIsActive()) {
             while (opModeIsActive()) {
+                telemetryM.setDebug(debugMode);
                 // raw encoder value
                 double rfRaw = (rfA.getVoltage() / 3.3) * 360;
                 double lfRaw = (lfA.getVoltage() / 3.3) * 360;
@@ -106,7 +109,7 @@ public class swerbe extends LinearOpMode {
                 lf.setPower(Math.abs(angleError(wa3, lfE)) > 2 ? -pid.calculate(lfE, wa3) : 0);
                 lr.setPower(Math.abs(angleError(wa4, lrE)) > 2 ? -pid.calculate(lrE, wa4) : 0);
                 // steering math stuff
-                double servoSmooth = 0.8; // smoothing factor 0 = no movement, 1 = instant
+                double servoSmooth = 0.2; // smoothing factor 0 = no movement, 1 = instant
                 wa1 += angleError(lerp(rfF, rfS, joystickMix(gamepad1.left_stick_y, gamepad1.left_stick_x)), wa1) * servoSmooth;
                 wa2 += angleError(lerp(rrF, rrS, joystickMix(gamepad1.left_stick_y, gamepad1.left_stick_x)), wa2) * servoSmooth;
                 wa3 += angleError(lerp(lfF, lfS, joystickMix(gamepad1.left_stick_y, gamepad1.left_stick_x)), wa3) * servoSmooth;
@@ -134,26 +137,32 @@ public class swerbe extends LinearOpMode {
                     rightRear.setPower(rightRear.getPower() * mSpeed);
                 }
                 // telemetry
-                telemetryM.addLine("RAW Encoder Angles:");
-                telemetryM.addData("RF Raw", rfRaw);
-                telemetryM.addData("LF Raw", lfRaw);
-                telemetryM.addData("RR Raw", rrRaw);
-                telemetryM.addData("LR Raw", lrRaw);
-                telemetryM.addLine("\nOFFSET Encoder Angles:");
-                telemetryM.addData("RF OFF", rfE);
-                telemetryM.addData("LF OFF", lfE);
-                telemetryM.addData("RR OFF", rrE);
-                telemetryM.addData("LR OFF", lrE);
-                telemetryM.addLine("\nTarget Angles:");
-                telemetryM.addData("RF Target", wa1);
-                telemetryM.addData("RR Target", wa2);
-                telemetryM.addData("LF Target", wa3);
-                telemetryM.addData("LR Target", wa4);
-                telemetryM.addLine("\nErrors (deg):");
-                telemetryM.addData("RF error", angleError(wa1, rfE));
-                telemetryM.addData("RR error", angleError(wa2, rrE));
-                telemetryM.addData("LF error", angleError(wa3, lfE));
-                telemetryM.addData("LR error", angleError(wa4, lrE));
+                telemetryM.addLine("Metrobotics Team 14212!");
+                telemetryM.addLine(true, "RAW Encoder Angles:");
+                telemetryM.addData(true, "RF Raw", rfRaw);
+                telemetryM.addData(true, "LF Raw", lfRaw);
+                telemetryM.addData(true, "RR Raw", rrRaw);
+                telemetryM.addData(true, "LR Raw", lrRaw);
+                telemetryM.addLine(true, "\nOFFSET Encoder Angles:");
+                telemetryM.addData(true, "RF OFF", rfE);
+                telemetryM.addData(true, "LF OFF", lfE);
+                telemetryM.addData(true, "RR OFF", rrE);
+                telemetryM.addData(true, "LR OFF", lrE);
+                telemetryM.addLine(true, "\nTarget Angles:");
+                telemetryM.addData(true, "RF Target", wa1);
+                telemetryM.addData(true, "RR Target", wa2);
+                telemetryM.addData(true, "LF Target", wa3);
+                telemetryM.addData(true, "LR Target", wa4);
+                telemetryM.addLine(true, "\nErrors (deg):");
+                telemetryM.addData(true, "RF error", angleError(wa1, rfE));
+                telemetryM.addData(true, "RR error", angleError(wa2, rrE));
+                telemetryM.addData(true, "LF error", angleError(wa3, lfE));
+                telemetryM.addData(true, "LR error", angleError(wa4, lrE));
+                telemetryM.addLine(true, "\nMotor powers:");
+                telemetryM.addData(true, "RF Power", rightFront.getPower());
+                telemetryM.addData(true, "LF Power", leftFront.getPower());
+                telemetryM.addData(true, "RR Power", rightRear.getPower());
+                telemetryM.addData(true, "LR Power", leftRear.getPower());
                 telemetryM.update();
             }
         }
