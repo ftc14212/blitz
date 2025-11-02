@@ -7,9 +7,6 @@
 ***/
 package org.firstinspires.ftc.teamcode.teleOp;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -25,7 +22,6 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 
 @Configurable
-@Config("swerbe")
 @TeleOp(name = "swerbe", group = "test_ftc14212")
 public class swerbe extends LinearOpMode {
     /**
@@ -62,7 +58,6 @@ public class swerbe extends LinearOpMode {
     @Override
     public void runOpMode() {
         // hardware
-        telemetry = new MultipleTelemetry(this.telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         // motors
         CachingDcMotorEx leftFront = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "leftFront"));

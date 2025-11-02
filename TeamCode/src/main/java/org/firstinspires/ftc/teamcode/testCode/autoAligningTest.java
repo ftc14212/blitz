@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
@@ -21,14 +18,12 @@ import java.util.List;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 
 @Configurable
-@Config("autoAligningTest")
 @TeleOp(name = "autoAligningTest", group = "test_ftc14212")
 public class autoAligningTest extends LinearOpMode {
     boolean debugMode = true;
     @Override
     public void runOpMode() {
         // hardware
-        telemetry = new MultipleTelemetry(this.telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         Limelight3A limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(50);
