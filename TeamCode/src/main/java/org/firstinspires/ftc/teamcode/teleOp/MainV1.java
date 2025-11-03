@@ -11,7 +11,6 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
-import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -22,7 +21,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
@@ -33,17 +32,18 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Config
 @Configurable
-@TeleOp(name="Main v1", group=".ftc23403")
+@TeleOp(name="Main v1", group=".ftc14212")
 public class MainV1 extends LinearOpMode {
     /**
      * MAIN V6 BY DAVID
      * @author David Grieas - 14212 MetroBotics - former member of - 23403 C{}de C<>nduct<>rs
      **/
-    // servos
+    // positions
     public static double pivotCpos = 0;
     public static double hoodCpos = 1;
     public static double indexerCpos = 0;
     public static double ledCpos = 0.611;
+    public static double turretTpos = 0;
     // misc
     private double wheelSpeed = wheelSpeedMax;
     // timers
@@ -59,10 +59,9 @@ public class MainV1 extends LinearOpMode {
     public void runOpMode() {
         // hardware
         PIDController shooterPID = new PIDController(Math.sqrt(0), 0, 0);
-        PIDController turretPID = new PIDController(0.7, 0, 0.05);
+        PIDController turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
-
         // Limelight3A limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         // limelight3A.setPollRateHz(50);
         LynxUtils.initLynx(hardwareMap);
@@ -78,6 +77,7 @@ public class MainV1 extends LinearOpMode {
         CachingDcMotorEx rightRear = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "rightRear")); // 312 rpm --> 468 rpm
         CachingDcMotorEx turret = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "turret")); // 223 rpm
         CachingDcMotorEx shooter = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooter")); // 6000 rpm --> ~9100 rpm
+        CachingDcMotorEx intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
         // servos
         CachingServo pivot = new CachingServo(hardwareMap.get(Servo.class, "intakePivot")); // 1x axon max
         CachingServo hood = new CachingServo(hardwareMap.get(Servo.class, "hood")); // 1x axon mini
@@ -88,6 +88,10 @@ public class MainV1 extends LinearOpMode {
         // limits
         pivot.scaleRange(0, 0.4);
         // hood.scaleRange(0.1, 0.86);
+        // reset encoders
+        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // turn on motor
+        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // reverse
         leftFront.setDirection(DcMotorEx.Direction.REVERSE);
         leftRear.setDirection(DcMotorEx.Direction.REVERSE);
@@ -96,6 +100,7 @@ public class MainV1 extends LinearOpMode {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
@@ -103,6 +108,7 @@ public class MainV1 extends LinearOpMode {
         // starting pos
         hood.setPosition(hoodCpos = 0);
         pivot.setPosition(pivotCpos = 0);
+        led.setPosition(ledCpos = 0.611);
         hardwareMap.get(IMU.class, "imu").resetYaw();
         // misc
         loopTime = new ElapsedTime();
@@ -119,6 +125,7 @@ public class MainV1 extends LinearOpMode {
                 // variables
                 telemetryM.setDebug(debugMode);
                 boolean moving = Math.abs(gamepad1.left_stick_x) > 0 || Math.abs(gamepad1.left_stick_y) > 0 || Math.abs(gamepad1.right_stick_x) > 0;
+                double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 // gamepad stuff
                 previousGamepad1.copy(currentGamepad1);
                 previousGamepad2.copy(currentGamepad2);
@@ -156,6 +163,33 @@ public class MainV1 extends LinearOpMode {
                     follower.update();
                     */
                 }
+                if (gamepad1.left_trigger > 0.1) {
+                    pivotCpos = 0.75;
+                    indexerCpos = 1;
+                    intake.setPower(1);
+                } else if (gamepad1.right_trigger > 0.1) {
+                    pivotCpos = 0.75;
+                    indexerCpos = -1;
+                    intake.setPower(-1);
+                } else if (gamepad1.dpad_left) {
+                    pivotCpos = 0.45;
+                    indexerCpos = 1;
+                    intake.setPower(0);
+                } else if (gamepad1.dpad_right) {
+                    pivotCpos = 0.75;
+                    indexerCpos = 0;
+                    intake.setPower(1);
+                } else {
+                    pivotCpos = 0.45;
+                    indexerCpos = 0;
+                    intake.setPower(0);
+                }
+                if (Math.abs(turretCpos - turretTpos) > 2) {
+                    turret.setPower(-Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F)));
+                } else {
+                    turret.setPower(0);
+                }
+
                 if (!moving && !odoDrive) {
                     leftFront.setPower(0);
                     leftRear.setPower(0);
@@ -168,10 +202,7 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "hood", hood.getPosition());
                 telemetryM.addData(true, "indexer", indexer.getPower());
                 telemetryM.addData(true, "led", led.getPosition());
-                telemetryM.addData(true, "pivotCpos", pivotCpos);
-                telemetryM.addData(true, "hoodCpos", hoodCpos);
-                telemetryM.addData(true, "indexerCpos", indexerCpos);
-                telemetryM.addData(true, "ledCpos", ledCpos);
+                telemetryM.addData(true, "turret", turretCpos);
                 telemetryM.update();
                 loopTime.reset();
             }
