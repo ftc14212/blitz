@@ -11,6 +11,8 @@ import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
+import com.pedropathing.follower.Follower;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -21,6 +23,10 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.testCode.PIDTuneServo;
+import org.firstinspires.ftc.teamcode.testCode.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
@@ -44,6 +50,9 @@ public class MainV1 extends LinearOpMode {
     public static double indexerCpos = 0;
     public static double ledCpos = 0.611;
     public static double turretTpos = 0;
+    // presets
+    public static double blueShooterH = 45;
+    public static double redShooterH = 275;
     // misc
     private double wheelSpeed = wheelSpeedMax;
     // timers
@@ -51,17 +60,19 @@ public class MainV1 extends LinearOpMode {
     // odometry
     public static boolean odoDrive = false;
     // config stuff
-    public static boolean redSide = true;
+    public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
     // heading lock
     @Override
     public void runOpMode() {
         // hardware
-        PIDController shooterPID = new PIDController(Math.sqrt(0), 0, 0);
+        PIDController shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
         PIDController turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
         telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
+        Follower follower = Constants.createFollower(hardwareMap);
+        GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Limelight3A limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         // limelight3A.setPollRateHz(50);
         LynxUtils.initLynx(hardwareMap);
@@ -90,6 +101,7 @@ public class MainV1 extends LinearOpMode {
         // hood.scaleRange(0.1, 0.86);
         // reset encoders
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        pinpoint.resetPosAndIMU();
         // turn on motor
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // reverse
@@ -112,6 +124,7 @@ public class MainV1 extends LinearOpMode {
         hardwareMap.get(IMU.class, "imu").resetYaw();
         // misc
         loopTime = new ElapsedTime();
+        follower.update();
         // reset
         loopTime.reset();
         // telemetry
@@ -120,12 +133,15 @@ public class MainV1 extends LinearOpMode {
         telemetryM.update();
         waitForStart();
         if (opModeIsActive()) {
+            //
             // follower.startTeleopDrive();
             while (opModeIsActive()) {
                 // variables
+                follower.update();
                 telemetryM.setDebug(debugMode);
                 boolean moving = Math.abs(gamepad1.left_stick_x) > 0 || Math.abs(gamepad1.left_stick_y) > 0 || Math.abs(gamepad1.right_stick_x) > 0;
                 double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+                double turretOffset = Math.toDegrees(follower.getHeading()) - (redSide ? redShooterH : blueShooterH);
                 // gamepad stuff
                 previousGamepad1.copy(currentGamepad1);
                 previousGamepad2.copy(currentGamepad2);
@@ -157,11 +173,9 @@ public class MainV1 extends LinearOpMode {
                     rightFront.setPower(rightFrontPower);
                     rightRear.setPower(rightBackPower);
                 } else {
-                    /*
                     follower.setMaxPower(wheelSpeed);
-                    follower.setTeleOpMovementVectors(-gamepad1.left_stick_y, -gamepad1.left_stick_x, headingLock ? (Math.toDegrees(headingError) > 2 && Math.toDegrees(headingError) < 50 ? headingCalc : 0) : -gamepad1.right_stick_x, true);
+                    // follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
                     follower.update();
-                    */
                 }
                 if (gamepad1.left_trigger > 0.1) {
                     pivotCpos = 0.75;
@@ -184,6 +198,15 @@ public class MainV1 extends LinearOpMode {
                     indexerCpos = 0;
                     intake.setPower(0);
                 }
+
+                if (gamepad1.left_bumper) {
+                    ledCpos = 0.388;
+                    turretTpos = turretOffset;
+                } else if (!currentGamepad1.left_bumper && previousGamepad1.left_bumper) {
+                    turretTpos = 0;
+                    ledCpos = 0.611;
+                }
+
                 if (Math.abs(turretCpos - turretTpos) > 2) {
                     turret.setPower(-Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F)));
                 } else {
@@ -203,6 +226,8 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "indexer", indexer.getPower());
                 telemetryM.addData(true, "led", led.getPosition());
                 telemetryM.addData(true, "turret", turretCpos);
+                telemetryM.addData(true, "turretOffset", turretOffset);
+                telemetryM.addData(true, "heading", Math.toDegrees(follower.getHeading()));
                 telemetryM.update();
                 loopTime.reset();
             }
