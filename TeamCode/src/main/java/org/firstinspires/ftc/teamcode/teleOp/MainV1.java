@@ -57,6 +57,7 @@ public class MainV1 extends LinearOpMode {
     private double wheelSpeed = wheelSpeedMax;
     // timers
     ElapsedTime loopTime;
+    ElapsedTime tResetT;
     // odometry
     public static boolean odoDrive = false;
     // config stuff
@@ -124,16 +125,17 @@ public class MainV1 extends LinearOpMode {
         hardwareMap.get(IMU.class, "imu").resetYaw();
         // misc
         loopTime = new ElapsedTime();
+        tResetT = new ElapsedTime();
         follower.update();
         // reset
         loopTime.reset();
+        tResetT.reset();
         // telemetry
         telemetryM.addLine("BEASTKIT Team 23403!");
         telemetryM.addLine(true, "INIT DONE!");
         telemetryM.update();
         waitForStart();
         if (opModeIsActive()) {
-            //
             // follower.startTeleopDrive();
             while (opModeIsActive()) {
                 // variables
@@ -142,6 +144,7 @@ public class MainV1 extends LinearOpMode {
                 boolean moving = Math.abs(gamepad1.left_stick_x) > 0 || Math.abs(gamepad1.left_stick_y) > 0 || Math.abs(gamepad1.right_stick_x) > 0;
                 double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 double turretOffset = Math.toDegrees(follower.getHeading()) - (redSide ? redShooterH : blueShooterH);
+                boolean tReset = false;
                 // gamepad stuff
                 previousGamepad1.copy(currentGamepad1);
                 previousGamepad2.copy(currentGamepad2);
@@ -203,12 +206,18 @@ public class MainV1 extends LinearOpMode {
                     ledCpos = 0.388;
                     turretTpos = turretOffset;
                 } else if (!currentGamepad1.left_bumper && previousGamepad1.left_bumper) {
+                    tReset = true;
+                    tResetT.reset();
                     turretTpos = 0;
                     ledCpos = 0.611;
                 }
+                if (tResetT.milliseconds() > 1500) tReset = false;
 
                 if (Math.abs(turretCpos - turretTpos) > 2) {
-                    turret.setPower(-Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F)));
+                    turretTpos += turretOffset > 180 ? -360 : turretOffset < -180 ? 360 : 0;
+                    double power = Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F));
+                    if (tReset && turretCpos >= 0) turret.setPower(power);
+                    else turret.setPower(-power);
                 } else {
                     turret.setPower(0);
                 }

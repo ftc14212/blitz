@@ -8,13 +8,15 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 
 @Config("PID Tune Shooter")
 @Autonomous(name="PID Tune Shooter", group="test_ftc14212")
 public class PIDTuneShooter extends OpMode {
-    private CachingDcMotorEx shooter;
+    private CachingDcMotorEx shooterR;
+    private CachingDcMotorEx shooterL;
     private PIDController controller;
     public static double P = 8;
     public static double I = 0;
@@ -29,9 +31,13 @@ public class PIDTuneShooter extends OpMode {
         // set the PID values
         controller = new PIDController(Math.sqrt(P), I, D);
         // hardware
-        shooter = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooter"));
+        shooterR = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterR"));
+        shooterL = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterL"));
+        // reverse motor
+        shooterL.setDirection(DcMotorSimple.Direction.REVERSE);
         // turn on the motors without the built in controller
-        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooterL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // combine both FTCDashboard and the regular telemetry
         telemetry = new MultipleTelemetry(this.telemetry, FtcDashboard.getInstance().getTelemetry());
         // telemetry
@@ -45,22 +51,27 @@ public class PIDTuneShooter extends OpMode {
     @Override
     public void loop() {
         // Get current positions
-        double velocity = shooter.getVelocity();
+        double velocityR = shooterR.getVelocity();
+        double velocityL = shooterL.getVelocity();
         // Update PID values
         controller.setPID(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
         F = TARGET;
-        // Calculate PID
-        double pid = controller.calculate(velocity, TARGET);
+        // Calculate PID only on one motor (leader)
+        double pid = controller.calculate(velocityR, TARGET);
         double ff = F;
         double rawPower = pid + ff;
         // Apply power
-        shooter.setVelocity(rawPower); // leader
+        shooterR.setVelocity(rawPower); // leader
+        shooterL.setVelocity(rawPower); // follower
         // telemetry for debugging
         telemetry.addData("PIDF", "P: " + P + " I: " + I + " D: " + D + " F: " + F);
         telemetry.addData("target", TARGET);
-        telemetry.addData("velocity", velocity);
-        telemetry.addData("shooterPower", rawPower);
-        telemetry.addData("error", Math.abs(TARGET - velocity));
+        telemetry.addData("velocityR", velocityR);
+        telemetry.addData("velocityL", velocityL);
+        telemetry.addData("rawVelocity", rawPower);
+        telemetry.addData("errorR", Math.abs(TARGET - velocityR));
+        telemetry.addData("errorL", Math.abs(TARGET - velocityL));
+        telemetry.addData("errorAvg", (Math.abs(TARGET - velocityR) + Math.abs(TARGET - velocityL)) / 2);
         telemetry.update();
     }
 }

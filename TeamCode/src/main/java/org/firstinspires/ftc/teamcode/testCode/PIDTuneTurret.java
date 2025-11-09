@@ -19,9 +19,9 @@ public class PIDTuneTurret extends OpMode {
     private CachingDcMotorEx turret;
     // private AnalogInput elc;
     private PIDController controller;
-    public static double P = 0.0005;
+    public static double P = 0.008;
     public static double I = 0;
-    public static double D = 0.0006;
+    public static double D = 0.00275;
     public static double F = 0;
     public static double TARGET = 0;
     public static double TPR = 4000; // ticks per revolution
@@ -39,7 +39,7 @@ public class PIDTuneTurret extends OpMode {
         // reverse motors
         // turret.setDirection(DcMotorEx.Direction.REVERSE);
         // reset encoders
-        // turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // turn on the motors without the built in controller
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // combine both FTCDashboard and the regular telemetry
