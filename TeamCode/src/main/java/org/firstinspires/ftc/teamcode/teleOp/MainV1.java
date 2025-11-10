@@ -18,19 +18,19 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.testCode.PIDTuneServo;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
+import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
@@ -45,16 +45,20 @@ public class MainV1 extends LinearOpMode {
      * @author David Grieas - 14212 MetroBotics - former member of - 23403 C{}de C<>nduct<>rs
      **/
     // positions
-    public static double pivotCpos = 0;
+    public static double pivotCpos = 0.45;
     public static double hoodCpos = 1;
     public static double indexerCpos = 0;
     public static double ledCpos = 0.611;
     public static double turretTpos = 0;
+    public static int shooterVelo = 0;
     // presets
     public static double blueShooterH = 45;
     public static double redShooterH = 275;
     // misc
     private double wheelSpeed = wheelSpeedMax;
+    private boolean tReset = false;
+    private boolean tReset2 = false;
+    private MainV1E status = MainV1E.NONE;
     // timers
     ElapsedTime loopTime;
     ElapsedTime tResetT;
@@ -88,7 +92,8 @@ public class MainV1 extends LinearOpMode {
         CachingDcMotorEx rightFront = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "rightFront")); // 312 rpm --> 468 rpm
         CachingDcMotorEx rightRear = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "rightRear")); // 312 rpm --> 468 rpm
         CachingDcMotorEx turret = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "turret")); // 223 rpm
-        CachingDcMotorEx shooter = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooter")); // 6000 rpm --> ~9100 rpm
+        CachingDcMotorEx shooterL = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterL")); // 6000 rpm
+        CachingDcMotorEx shooterR = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterR")); // 6000 rpm
         CachingDcMotorEx intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
         // servos
         CachingServo pivot = new CachingServo(hardwareMap.get(Servo.class, "intakePivot")); // 1x axon max
@@ -99,7 +104,6 @@ public class MainV1 extends LinearOpMode {
         CombinedCRServo indexer = new CombinedCRServo(leftIndexer, rightIndexer); // 2x axon minis
         // limits
         pivot.scaleRange(0, 0.4);
-        // hood.scaleRange(0.1, 0.86);
         // reset encoders
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         pinpoint.resetPosAndIMU();
@@ -108,6 +112,7 @@ public class MainV1 extends LinearOpMode {
         // reverse
         leftFront.setDirection(DcMotorEx.Direction.REVERSE);
         leftRear.setDirection(DcMotorEx.Direction.REVERSE);
+        shooterL.setDirection(DcMotorEx.Direction.REVERSE);
         // breaks
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -120,7 +125,7 @@ public class MainV1 extends LinearOpMode {
         LynxUtils.setLynxColor(255, 0, 255);
         // starting pos
         hood.setPosition(hoodCpos = 0);
-        pivot.setPosition(pivotCpos = 0);
+        pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
         hardwareMap.get(IMU.class, "imu").resetYaw();
         // misc
@@ -141,10 +146,15 @@ public class MainV1 extends LinearOpMode {
                 // variables
                 follower.update();
                 telemetryM.setDebug(debugMode);
-                boolean moving = Math.abs(gamepad1.left_stick_x) > 0 || Math.abs(gamepad1.left_stick_y) > 0 || Math.abs(gamepad1.right_stick_x) > 0;
                 double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 double turretOffset = Math.toDegrees(follower.getHeading()) - (redSide ? redShooterH : blueShooterH);
-                boolean tReset = false;
+                // status
+                boolean INTAKE = gamepad1.left_trigger > 0.1;
+                boolean OUTTAKE = gamepad1.right_trigger > 0.1;
+                boolean FEED = gamepad1.right_bumper;
+                boolean ALIGN_SHOOT = gamepad1.left_bumper;
+                boolean RESET_SHOOTER_TURRET = !currentGamepad1.left_bumper && previousGamepad1.left_bumper;
+                boolean RESET_INTAKE = (!currentGamepad1.right_bumper && previousGamepad1.right_bumper) || gamepad1.dpadRightWasReleased() || (!(currentGamepad1.right_trigger > 0.1) && previousGamepad1.right_trigger > 0.1) || (!(currentGamepad1.left_trigger > 0.1) && previousGamepad1.left_trigger > 0.1);
                 // gamepad stuff
                 previousGamepad1.copy(currentGamepad1);
                 previousGamepad2.copy(currentGamepad2);
@@ -180,54 +190,60 @@ public class MainV1 extends LinearOpMode {
                     // follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
                     follower.update();
                 }
-                if (gamepad1.left_trigger > 0.1) {
+                // controls
+                if (INTAKE) {
                     pivotCpos = 0.75;
                     indexerCpos = 1;
                     intake.setPower(1);
-                } else if (gamepad1.right_trigger > 0.1) {
+                    shooterVelo = -75;
+                    status = MainV1E.INTAKE;
+                }
+                if (OUTTAKE) {
                     pivotCpos = 0.75;
                     indexerCpos = -1;
                     intake.setPower(-1);
-                } else if (gamepad1.dpad_left) {
+                    status = MainV1E.OUTTAKE;
+                }
+                if (FEED) {
                     pivotCpos = 0.45;
                     indexerCpos = 1;
-                    intake.setPower(0);
-                } else if (gamepad1.dpad_right) {
-                    pivotCpos = 0.75;
-                    indexerCpos = 0;
                     intake.setPower(1);
-                } else {
-                    pivotCpos = 0.45;
-                    indexerCpos = 0;
-                    intake.setPower(0);
                 }
-
-                if (gamepad1.left_bumper) {
+                if (ALIGN_SHOOT) {
                     ledCpos = 0.388;
                     turretTpos = turretOffset;
-                } else if (!currentGamepad1.left_bumper && previousGamepad1.left_bumper) {
+                    turretTpos += turretOffset > 200 ? -360 : turretOffset < -200 ? 360 : 0;
+                    shooterVelo = 1300;
+                    status = MainV1E.ALIGN_SHOOT;
+                } else if (RESET_SHOOTER_TURRET) {
                     tReset = true;
                     tResetT.reset();
                     turretTpos = 0;
                     ledCpos = 0.611;
+                    shooterVelo = 0;
+                    status = MainV1E.RESET_SHOOTER_TURRET;
                 }
+                if (RESET_INTAKE) {
+                    pivotCpos = 0.45;
+                    indexerCpos = 0;
+                    intake.setPower(0);
+                    shooterVelo = 0;
+                }
+                // shooter code
+                double sPower = shooterPID.calculate(shooterR.getVelocity(), shooterVelo) + shooterVelo;
+                shooterR.setVelocity(sPower); // leader
+                shooterL.setVelocity(sPower); // follower
+                // turret code
                 if (tResetT.milliseconds() > 1500) tReset = false;
-
                 if (Math.abs(turretCpos - turretTpos) > 2) {
-                    turretTpos += turretOffset > 180 ? -360 : turretOffset < -180 ? 360 : 0;
                     double power = Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F));
-                    if (tReset && turretCpos >= 0) turret.setPower(power);
+                    if (tReset && turretCpos >= 130) tReset2 = true;
+                    if (tReset2) {
+                        turret.setPower(Math.abs(power));
+                        if (turretCpos < 20) tReset2 = false;
+                    }
                     else turret.setPower(-power);
-                } else {
-                    turret.setPower(0);
-                }
-
-                if (!moving && !odoDrive) {
-                    leftFront.setPower(0);
-                    leftRear.setPower(0);
-                    rightFront.setPower(0);
-                    rightRear.setPower(0);
-                }
+                } else turret.setPower(0);
                 // telemetry
                 telemetryM.addLine("BEASTKIT Team 23403!");
                 telemetryM.addData(true, "pivot", pivot.getPosition());
@@ -237,6 +253,9 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "turret", turretCpos);
                 telemetryM.addData(true, "turretOffset", turretOffset);
                 telemetryM.addData(true, "heading", Math.toDegrees(follower.getHeading()));
+                telemetryM.addData(true, "turretPower", turret.getPower());
+                telemetryM.addData(true, "tReset", tReset);
+                telemetryM.addData(true, "turretTpos", turretTpos);
                 telemetryM.update();
                 loopTime.reset();
             }
