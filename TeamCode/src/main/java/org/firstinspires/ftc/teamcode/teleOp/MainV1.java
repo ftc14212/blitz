@@ -46,8 +46,8 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 @TeleOp(name="Main v1", group=".ftc14212")
 public class MainV1 extends LinearOpMode {
     /**
-     * MAIN V6 BY DAVID
-     * @author David Grieas - 14212 MetroBotics - former member of - 23403 C{}de C<>nduct<>rs
+     * MAIN V1 BY DAVID
+     * @author David Grieas - 14212 MetroBotics
      **/
     // positions
     public static double pivotCpos = 0.45;
@@ -63,6 +63,7 @@ public class MainV1 extends LinearOpMode {
     private double wheelSpeed = wheelSpeedMax;
     private boolean tReset = false;
     private boolean tReset2 = false;
+    public static boolean shooterOn = true;
     private MainV1E status = MainV1E.NONE;
     public static int shooterT = 3500;
     // timers
@@ -74,7 +75,6 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
-    // heading lock
     @Override
     public void runOpMode() {
         // hardware
@@ -158,6 +158,7 @@ public class MainV1 extends LinearOpMode {
                 // variables
                 follower.update();
                 telemetryM.setDebug(debugMode);
+                turretPID.setPID(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
                 double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 double turretOffset = Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()));
                 double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
@@ -253,7 +254,7 @@ public class MainV1 extends LinearOpMode {
                     shooterVelo = 0;
                 }
                 // shooter code
-                double sPower = shooterPID.calculate(shooterR.getVelocity(), shooterVelo) + shooterVelo;
+                double sPower = shooterOn ? shooterPID.calculate(shooterR.getVelocity(), shooterVelo) + shooterVelo : 0;
                 shooterR.setVelocity(sPower); // leader
                 shooterL.setVelocity(sPower); // follower
                 // turret code
@@ -279,6 +280,9 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "redPos", Math.toDegrees(redPos.getHeading()));
                 telemetryM.addData(true, "turretPower", turret.getPower());
                 telemetryM.addData(true, "tReset", tReset);
+                telemetryM.addData(true, "tReset2", tReset2);
+                telemetryM.addData(true,"turret error", Math.abs(turretTpos - turretCpos));
+                telemetryM.addData(true, "PIDF", "P: " + PIDTuneTurret.P + " I: " + PIDTuneTurret.I + " D: " + PIDTuneTurret.D + " F: " + PIDTuneTurret.F);
                 telemetryM.addData(true, "turretTpos", turretTpos);
                 telemetryM.addData(true, "shooterR Current", shooterR.getCurrent(CurrentUnit.MILLIAMPS));
                 telemetryM.addData(true, "indexerOn", indexerOn);
