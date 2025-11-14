@@ -25,6 +25,7 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -75,6 +76,7 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
+    public static double turretOffset = -3;
     @Override
     public void runOpMode() {
         // hardware
@@ -112,7 +114,6 @@ public class MainV1 extends LinearOpMode {
         pivot.scaleRange(0, 0.4);
         // reset encoders
         turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        pinpoint.resetPosAndIMU();
         // turn on motor
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // reverse
@@ -155,12 +156,14 @@ public class MainV1 extends LinearOpMode {
                 // poses
                 Pose bluePos = new Pose(114.9, 24.7, Math.toRadians(blueShooter));
                 Pose redPos = new Pose(124.9, -62, Math.toRadians(redShooter));
+                Pose target = redSide ? redPos : bluePos;
                 // variables
                 follower.update();
                 telemetryM.setDebug(debugMode);
                 turretPID.setPID(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
                 double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
-                double turretOffset = Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()));
+                double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
+                double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
                 double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
                 // status
                 boolean INTAKE = gamepad1.left_trigger > 0.1;
@@ -231,10 +234,12 @@ public class MainV1 extends LinearOpMode {
                     intake.setPower(1);
                 }
                 if (ALIGN_SHOOT) {
-                    if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo+50) ledCpos = 1;
+                    if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80) ledCpos = 1;
                     else ledCpos = 0.388;
-                    turretTpos = turretOffset;
-                    turretTpos += turretOffset > 200 ? -360 : turretOffset < -200 ? 360 : 0;
+                    // turretTpos = turretOffset;
+                    double turretO = alignTurret(follower.getPose().getX(), follower.getPose().getY(), Math.toDegrees(follower.getHeading()), target);
+                    turretTpos = turretO;
+                    turretTpos += turretO > 200 ? -360 : turretO < -200 ? 360 : 0;
                     shooterVelo = getShooterVelo(distShooter);
                     hoodCpos = getHoodCpos(distShooter);
                     status = MainV1E.ALIGN_SHOOT;
@@ -299,6 +304,8 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "\nbluePos:\nX:", bluePos.getX());
                 telemetryM.addData(true, "Y:", bluePos.getY());
                 telemetryM.addData(true, "heading:", Math.toDegrees(bluePos.getHeading()));
+                telemetryM.addData(true, "\nturret offset XY", turretOffsetXY);
+                telemetryM.addData(true, "alignTurret", alignTurret(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading(), target));
                 telemetryM.update();
                 loopTime.reset();
             }
@@ -365,6 +372,14 @@ public class MainV1 extends LinearOpMode {
             }
         }
         return hoodCpos;
+    }
+    public double alignTurret(double x, double y, double heading, Pose target) {
+        x = turretOffset + x;
+        y = 0 + y;
+        double goalX = target.getX();
+        double goalY = target.getY();
+        double angleToGoal = Math.toDegrees(Math.atan2(goalX - x, goalY - y));
+        return angleToGoal + heading - 90;
     }
 
 }
