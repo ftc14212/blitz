@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 
-@Config("PID Tune Shooter")
+@Configurable
 @Autonomous(name="PID Tune Shooter", group="test_ftc14212")
 public class PIDTuneShooter extends OpMode {
     private CachingDcMotorEx shooterR;
@@ -39,7 +37,6 @@ public class PIDTuneShooter extends OpMode {
         shooterR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooterL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // combine both FTCDashboard and the regular telemetry
-        telemetry = new MultipleTelemetry(this.telemetry, FtcDashboard.getInstance().getTelemetry());
         // telemetry
         telemetry.addLine("Use this to tune the turret.");
         telemetry.update();

@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.testCode;
 
-import com.acmerobotics.dashboard.config.Config;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.hardware.limelightvision.LLResult;
@@ -25,7 +24,6 @@ import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Configurable
-@Config
 @TeleOp(name = "measureShooter", group = "test_ftc14212")
 public class measureShooter extends LinearOpMode {
     boolean debugMode = true;

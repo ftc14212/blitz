@@ -6,9 +6,6 @@
 ***/
 package org.firstinspires.ftc.teamcode.teleOp;
 
-import com.acmerobotics.dashboard.FtcDashboard;
-import com.acmerobotics.dashboard.config.Config;
-import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
@@ -19,13 +16,10 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -36,13 +30,13 @@ import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
+import org.firstinspires.ftc.teamcode.utils.Variables;
 import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
-@Config
 @Configurable
 @TeleOp(name="Main v1", group=".ftc14212")
 public class MainV1 extends LinearOpMode {
@@ -58,7 +52,7 @@ public class MainV1 extends LinearOpMode {
     public static double turretTpos = 0;
     public static int shooterVelo = 0;
     // presets
-    public static double blueShooter = 43;
+    public static double blueShooter = 143;
     public static double redShooter = -49;
     // misc
     private double wheelSpeed = wheelSpeedMax;
@@ -82,7 +76,7 @@ public class MainV1 extends LinearOpMode {
         // hardware
         PIDController shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
         PIDController turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
-        telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        // telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         Follower follower = Constants.createFollower(hardwareMap);
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
@@ -125,7 +119,7 @@ public class MainV1 extends LinearOpMode {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        // turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
@@ -134,9 +128,8 @@ public class MainV1 extends LinearOpMode {
         hood.setPosition(hoodCpos = 0);
         pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
-        pinpoint.resetPosAndIMU();
-        pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 56.5, 8.3, AngleUnit.DEGREES, 90));
-        follower.setStartingPose(new Pose(56.5, 8.3, Math.toRadians(90)));
+        follower.setStartingPose(Variables.lastAutoPos == null ? new Pose(56.5, 8.3, Math.toRadians(90)) : new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
+        Variables.lastAutoPos = null;
         // misc
         loopTime = new ElapsedTime();
         tResetT = new ElapsedTime();
@@ -154,11 +147,10 @@ public class MainV1 extends LinearOpMode {
             follower.startTeleopDrive();
             while (opModeIsActive()) {
                 // poses
-                Pose bluePos = new Pose(114.9, 24.7, Math.toRadians(blueShooter));
-                Pose redPos = new Pose(124.9, -62, Math.toRadians(redShooter));
+                Pose bluePos = new Pose(34.9, 121.9, Math.toRadians(blueShooter));
+                Pose redPos = new Pose(124.9, -30.5, Math.toRadians(redShooter));
                 Pose target = redSide ? redPos : bluePos;
                 // variables
-                follower.update();
                 telemetryM.setDebug(debugMode);
                 turretPID.setPID(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
                 double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
@@ -205,7 +197,6 @@ public class MainV1 extends LinearOpMode {
                 } else {
                     follower.setMaxPower(wheelSpeed);
                     follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
-                    follower.update();
                 }
                 // controls
                 if (INTAKE) {
@@ -273,6 +264,7 @@ public class MainV1 extends LinearOpMode {
                     }
                     else turret.setPower(-power);
                 } else turret.setPower(0);
+                follower.update();
                 // telemetry
                 telemetryM.addLine("BLITZ Team 14212!");
                 telemetryM.addData(true, "pivot", pivot.getPosition());
