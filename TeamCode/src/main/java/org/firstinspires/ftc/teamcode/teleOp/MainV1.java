@@ -59,7 +59,6 @@ public class MainV1 extends LinearOpMode {
     private boolean tReset = false;
     private boolean tReset2 = false;
     public static boolean shooterOn = true;
-    private MainV1E status = MainV1E.NONE;
     public static int shooterT = 3500;
     // timers
     ElapsedTime loopTime;
@@ -204,7 +203,6 @@ public class MainV1 extends LinearOpMode {
                     if (indexerOn) indexerCpos = 1;
                     intake.setPower(1);
                     shooterVelo = -75;
-                    status = MainV1E.INTAKE;
                     if (!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) indexerCpos = 0;
                 }
                 if (INTAKE && shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT) {
@@ -216,7 +214,6 @@ public class MainV1 extends LinearOpMode {
                     pivotCpos = 0.75;
                     indexerCpos = -1;
                     intake.setPower(-1);
-                    status = MainV1E.OUTTAKE;
                 }
                 if (FEED) {
                     indexerOn = true;
@@ -233,7 +230,6 @@ public class MainV1 extends LinearOpMode {
                     turretTpos += turretO > 200 ? -360 : turretO < -200 ? 360 : 0;
                     shooterVelo = getShooterVelo(distShooter);
                     hoodCpos = getHoodCpos(distShooter);
-                    status = MainV1E.ALIGN_SHOOT;
                 } else if (RESET_SHOOTER_TURRET) {
                     tReset = true;
                     tResetT.reset();
@@ -241,7 +237,6 @@ public class MainV1 extends LinearOpMode {
                     ledCpos = 0.611;
                     shooterVelo = 0;
                     hoodCpos = 0;
-                    status = MainV1E.RESET_SHOOTER_TURRET;
                 }
                 if (RESET_INTAKE) {
                     pivotCpos = 0.45;
@@ -309,27 +304,22 @@ public class MainV1 extends LinearOpMode {
     }
     public int getShooterVelo(double distShooter) {
         int shooterVelo = 0;
-        double hoodCpos = 0;
 
         // Table values
         double[] distances = {20, 50, 80, 120};
         int[] velocities = {900, 1000, 1150, 1350};
-        double[] hoods = {0.0, 0.2, 0.3, 0.45};
 
         // If below or above range, clamp to min/max
         if (distShooter <= distances[0]) {
             shooterVelo = velocities[0];
-            hoodCpos = hoods[0];
         } else if (distShooter >= distances[distances.length - 1]) {
             shooterVelo = velocities[velocities.length - 1];
-            hoodCpos = hoods[hoods.length - 1];
         } else {
             // Linear interpolation between points
             for (int i = 0; i < distances.length - 1; i++) {
                 if (distShooter >= distances[i] && distShooter <= distances[i + 1]) {
                     double t = (distShooter - distances[i]) / (distances[i + 1] - distances[i]);
                     shooterVelo = (int) (velocities[i] + t * (velocities[i + 1] - velocities[i]));
-                    hoodCpos = hoods[i] + t * (hoods[i + 1] - hoods[i]);
                     break;
                 }
             }
@@ -337,27 +327,22 @@ public class MainV1 extends LinearOpMode {
         return shooterVelo;
     }
     public double getHoodCpos(double distShooter) {
-        int shooterVelo = 0;
         double hoodCpos = 0;
 
         // Table values
         double[] distances = {20, 50, 80, 120};
-        int[] velocities = {900, 1000, 1150, 1350};
         double[] hoods = {0.0, 0.2, 0.3, 0.45};
 
         // If below or above range, clamp to min/max
         if (distShooter <= distances[0]) {
-            shooterVelo = velocities[0];
             hoodCpos = hoods[0];
         } else if (distShooter >= distances[distances.length - 1]) {
-            shooterVelo = velocities[velocities.length - 1];
             hoodCpos = hoods[hoods.length - 1];
         } else {
             // Linear interpolation between points
             for (int i = 0; i < distances.length - 1; i++) {
                 if (distShooter >= distances[i] && distShooter <= distances[i + 1]) {
                     double t = (distShooter - distances[i]) / (distances[i + 1] - distances[i]);
-                    shooterVelo = (int) (velocities[i] + t * (velocities[i + 1] - velocities[i]));
                     hoodCpos = hoods[i] + t * (hoods[i + 1] - hoods[i]);
                     break;
                 }

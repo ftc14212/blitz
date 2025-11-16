@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.auto.v1; // make sure this aligns with class location
+package org.firstinspires.ftc.teamcode.auto.v1;
 
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.pedropathing.follower.Follower;
@@ -28,7 +28,7 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
-@Autonomous(name = "auto 12", group = ".ftc14212")
+@Autonomous(name = "12 baller auto", group = ".ftc14212")
 public class auto extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
@@ -261,11 +261,34 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        setPathState(-1);
+                        setPathState(3);
                     }
                 }
                 break;
             case 3:
+                if (!scoreCloseStarted) {
+                    follower.followPath(scoreClose1, true);
+                    scoreCloseStarted = true;
+                }
+                if (!follower.isBusy() && scoreCloseStarted) {
+                    ALIGN_SHOOT();
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(6);
+                    }
+                }
+
+
                 if (!follower.isBusy()) {
                     follower.followPath(scoreClose1, true);
                     setPathState(4);
@@ -327,8 +350,8 @@ public class auto extends OpMode {
     }
 
     public void ALIGN_SHOOT() {
-        if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80) ledCpos = 1;
-        else ledCpos = 0.388;
+        // if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80) ledCpos = 1;
+        // else ledCpos = 0.388;
         // turretTpos = turretOffset;
         double turretO = alignTurret(follower.getPose().getX(), follower.getPose().getY(), Math.toDegrees(follower.getHeading()), target);
         turretTpos = turretO;
