@@ -4,11 +4,10 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -29,8 +28,8 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
-@Autonomous(name = "12 baller auto", group = ".ftc14212")
-public class auto extends OpMode {
+@Autonomous(name = "12 baller auto RED", group = ".ftc14212")
+public class autoRS extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
@@ -78,15 +77,15 @@ public class auto extends OpMode {
     public static double speed = 1;
     public static boolean debugMode = true;
     private int pathState;
-    public static final Pose startPose = new Pose(56.5, 8.39, Math.toRadians(180));
-    public static final Pose intakeStart1Pose = new Pose(40, 33.5, Math.toRadians(180));
-    public static final Pose intakeEnd1Pose = new Pose(17, 34.7, Math.toRadians(180));
-    public static final Pose shootFarPose = new Pose(59.5, 14.5, Math.toRadians(180));
-    public static final Pose intakeStart2Pose = new Pose(40.5, 59, Math.toRadians(180));
-    public static final Pose intakeEnd2Pose = new Pose(17, 59.4, Math.toRadians(180));
-    public static final Pose shootClosePose = new Pose(61.4, 83.7, Math.toRadians(180));
-    public static final Pose intakeEnd3Pose = new Pose(26, 83.9, Math.toRadians(180));
-    public static final Pose parkPose = new Pose(48.9, 66.6, Math.toRadians(180));
+    public static final Pose startPose = auto.startPose.mirror();
+    public static final Pose intakeStart1Pose = auto.intakeStart1Pose.mirror();
+    public static final Pose intakeEnd1Pose = auto.intakeEnd1Pose.mirror();
+    public static final Pose shootFarPose = auto.shootFarPose.mirror();
+    public static final Pose intakeStart2Pose = auto.intakeStart2Pose.mirror();
+    public static final Pose intakeEnd2Pose = auto.intakeEnd2Pose.mirror();
+    public static final Pose shootClosePose = auto.shootClosePose.mirror();
+    public static final Pose intakeEnd3Pose = auto.intakeEnd3Pose.mirror();
+    public static final Pose parkPose = auto.parkPose.mirror();
     private PathChain intake1, scoreFar, intake2, scoreClose1, intake3, scoreClose2, park;
     /* preload lines */
     boolean intake1Started = false;
@@ -190,7 +189,7 @@ public class auto extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    turretTpos = 68;
+                    turretTpos = -68;
                     shooterVelo = 1300;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -229,7 +228,7 @@ public class auto extends OpMode {
                     shootFarStarted = true;
                 }
                 if (!follower.isBusy() && shootFarStarted) {
-                    turretTpos = 68;
+                    turretTpos = -68;
                     shooterVelo = 1300;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -275,7 +274,7 @@ public class auto extends OpMode {
                     scoreCloseStarted = true;
                 }
                 if (!follower.isBusy() && scoreCloseStarted) {
-                    turretTpos = 45;
+                    turretTpos = -45;
                     shooterVelo = 1050;
                     hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -321,7 +320,7 @@ public class auto extends OpMode {
                     shootClose2Started = true;
                 }
                 if (!follower.isBusy() && shootClose2Started) {
-                    turretTpos = 45;
+                    turretTpos = -45;
                     shooterVelo = 1050;
                     hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {

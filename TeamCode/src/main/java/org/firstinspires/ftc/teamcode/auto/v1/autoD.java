@@ -29,8 +29,8 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
-@Autonomous(name = "12 baller auto", group = ".ftc14212")
-public class auto extends OpMode {
+@Autonomous(name = "auto demondogs", group = ".ftc14212")
+public class autoD extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
@@ -79,55 +79,38 @@ public class auto extends OpMode {
     public static boolean debugMode = true;
     private int pathState;
     public static final Pose startPose = new Pose(56.5, 8.39, Math.toRadians(180));
-    public static final Pose intakeStart1Pose = new Pose(40, 33.5, Math.toRadians(180));
-    public static final Pose intakeEnd1Pose = new Pose(17, 34.7, Math.toRadians(180));
+    public static final Pose pos1 = new Pose(18, 24.4, Math.toRadians(-134));
+    public static final Pose pos2 = new Pose(18, 21.2, Math.toRadians(-134));
+    public static final Pose pos3 = new Pose(14.8, 9.4, Math.toRadians(180));
+    public static final Pose pos4 = new Pose(14.5, 13.5, Math.toRadians(180));
+    public static final Pose pos5 = new Pose(12.6, 13.6, Math.toRadians(180));
     public static final Pose shootFarPose = new Pose(59.5, 14.5, Math.toRadians(180));
-    public static final Pose intakeStart2Pose = new Pose(40.5, 59, Math.toRadians(180));
-    public static final Pose intakeEnd2Pose = new Pose(17, 59.4, Math.toRadians(180));
-    public static final Pose shootClosePose = new Pose(61.4, 83.7, Math.toRadians(180));
-    public static final Pose intakeEnd3Pose = new Pose(26, 83.9, Math.toRadians(180));
-    public static final Pose parkPose = new Pose(48.9, 66.6, Math.toRadians(180));
-    private PathChain intake1, scoreFar, intake2, scoreClose1, intake3, scoreClose2, park;
+    public static final Pose parkPose = new Pose(37, 33.8, Math.toRadians(180));
+    private PathChain intake1, scoreFar, park;
     /* preload lines */
     boolean intake1Started = false;
     boolean shootFarStarted = false;
-    boolean intake2Started = false;
-    boolean scoreCloseStarted = false;
-    boolean intake3Started = false;
-    boolean shootClose2Started = false;
     boolean parkStarted = false;
 
     public void buildPaths() {
         intake1 = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, intakeStart1Pose))
-                .setConstantHeadingInterpolation(intakeStart1Pose.getHeading())
-                .addPath(new BezierLine(intakeStart1Pose, intakeEnd1Pose))
-                .setConstantHeadingInterpolation(intakeEnd1Pose.getHeading())
+                .addPath(new BezierLine(startPose, pos1))
+                .setLinearHeadingInterpolation(startPose.getHeading(), pos1.getHeading())
+                .addPath(new BezierLine(pos1, pos2))
+                .setConstantHeadingInterpolation(pos2.getHeading())
+                .addPath(new BezierLine(pos2, pos3))
+                .setConstantHeadingInterpolation(pos3.getHeading())
+                .addPath(new BezierLine(pos3, pos4))
+                .setConstantHeadingInterpolation(pos4.getHeading())
+                .addPath(new BezierLine(pos4, pos5))
+                .setConstantHeadingInterpolation(pos5.getHeading())
                 .build();
         scoreFar = follower.pathBuilder()
-                .addPath(new BezierLine(intakeEnd1Pose, shootFarPose))
+                .addPath(new BezierLine(pos5, shootFarPose))
                 .setConstantHeadingInterpolation(shootFarPose.getHeading())
                 .build();
-        intake2 = follower.pathBuilder()
-                .addPath(new BezierLine(shootFarPose, intakeStart2Pose))
-                .setConstantHeadingInterpolation(intakeStart2Pose.getHeading())
-                .addPath(new BezierLine(intakeStart2Pose, intakeEnd2Pose))
-                .setConstantHeadingInterpolation(intakeEnd2Pose.getHeading())
-                .build();
-        scoreClose1 = follower.pathBuilder()
-                .addPath(new BezierLine(intakeEnd2Pose, shootClosePose))
-                .setConstantHeadingInterpolation(shootClosePose.getHeading())
-                .build();
-        intake3 = follower.pathBuilder()
-                .addPath(new BezierLine(shootClosePose, intakeEnd3Pose))
-                .setConstantHeadingInterpolation(intakeEnd3Pose.getHeading())
-                .build();
-        scoreClose2 = follower.pathBuilder()
-                .addPath(new BezierLine(intakeEnd3Pose, shootClosePose))
-                .setConstantHeadingInterpolation(shootClosePose.getHeading())
-                .build();
         park = follower.pathBuilder()
-                .addPath(new BezierLine(shootClosePose, parkPose))
+                .addPath(new BezierLine(shootFarPose, parkPose))
                 .setConstantHeadingInterpolation(parkPose.getHeading())
                 .build();
     }
@@ -191,7 +174,7 @@ public class auto extends OpMode {
             case 0:
                 if (!intake1Started) {
                     turretTpos = 68;
-                    shooterVelo = 1300;
+                    shooterVelo = 1350;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
@@ -230,7 +213,7 @@ public class auto extends OpMode {
                 }
                 if (!follower.isBusy() && shootFarStarted) {
                     turretTpos = 68;
-                    shooterVelo = 1300;
+                    shooterVelo = 1350;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
@@ -249,104 +232,11 @@ public class auto extends OpMode {
                 }
                 break;
             case 2:
-                if (!intake2Started) {
-                    speed = 0.9;
-                    INTAKE();
-                    follower.followPath(intake2, true);
-                    intake2Started = true;
-                }
-                if (!follower.isBusy()) {
-                    if (!ran2) {
-                        timer.reset();
-                        ran2 = true;
-                    }
-                    if (timer.milliseconds() > intakeWait) {
-                        speed = 1;
-                        ran = false;
-                        ran2 = false;
-                        RESET_INTAKE();
-                        setPathState(3);
-                    }
-                }
-                break;
-            case 3:
-                if (!scoreCloseStarted) {
-                    follower.followPath(scoreClose1, true);
-                    scoreCloseStarted = true;
-                }
-                if (!follower.isBusy() && scoreCloseStarted) {
-                    turretTpos = 45;
-                    shooterVelo = 1050;
-                    hoodCpos = 0.2;
-                    if (shooterR.getVelocity() >= shooterVelo) {
-                        if (!ran) {
-                            actionTimer.resetTimer();
-                            ran = true;
-                        }
-                        ledCpos = 1;
-                        FEED();
-                    }
-                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
-                        RESET_SHOOTER_TURRET();
-                        ran = false;
-                        ran2 = false;
-                        setPathState(4);
-                    }
-                }
-                break;
-            case 4:
-                if (!intake3Started) {
-                    speed = 0.8;
-                    INTAKE();
-                    follower.followPath(intake3, true);
-                    intake3Started = true;
-                }
-                if (!follower.isBusy()) {
-                    if (!ran2) {
-                        timer.reset();
-                        ran2 = true;
-                    }
-                    if (timer.milliseconds() > intakeWait) {
-                        speed = 1;
-                        ran = false;
-                        ran2 = false;
-                        RESET_INTAKE();
-                        setPathState(5);
-                    }
-                }
-                break;
-            case 5:
-                if (!shootClose2Started) {
-                    follower.followPath(scoreClose2, true);
-                    shootClose2Started = true;
-                }
-                if (!follower.isBusy() && shootClose2Started) {
-                    turretTpos = 45;
-                    shooterVelo = 1050;
-                    hoodCpos = 0.2;
-                    if (shooterR.getVelocity() >= shooterVelo) {
-                        if (!ran) {
-                            actionTimer.resetTimer();
-                            ran = true;
-                        }
-                        ledCpos = 1;
-                        FEED();
-                    }
-                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
-                        RESET_SHOOTER_TURRET();
-                        ran = false;
-                        ran2 = false;
-                        setPathState(6);
-                    }
-                }
-                break;
-            case 6:
                 if (!follower.isBusy()) {
                     follower.followPath(park, true);
                     setPathState(-1);
                 }
                 break;
-
         }
     }
 

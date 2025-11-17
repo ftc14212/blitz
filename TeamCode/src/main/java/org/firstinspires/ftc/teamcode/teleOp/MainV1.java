@@ -70,6 +70,7 @@ public class MainV1 extends LinearOpMode {
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
     public static double turretOffset = -3;
+    public static boolean turretOn = true;
     @Override
     public void runOpMode() {
         // hardware
@@ -173,6 +174,7 @@ public class MainV1 extends LinearOpMode {
                 hood.setPosition(hoodCpos);
                 indexer.setPower(indexerCpos);
                 led.setPosition(ledCpos);
+                if ((currentGamepad1.b && !previousGamepad1.b) || (currentGamepad2.b && !previousGamepad2.b)) turretOn = !turretOn;
                 // field side
                 if ((currentGamepad1.share && !previousGamepad1.share) || (currentGamepad2.share && !previousGamepad2.share)) redSide = !redSide;
                 // toggle debug
@@ -226,7 +228,7 @@ public class MainV1 extends LinearOpMode {
                     else ledCpos = 0.388;
                     // turretTpos = turretOffset;
                     double turretO = alignTurret(follower.getPose().getX(), follower.getPose().getY(), Math.toDegrees(follower.getHeading()), target);
-                    turretTpos = turretO;
+                    turretTpos = turretOn ? turretO : turretCpos;
                     turretTpos += turretO > 200 ? -360 : turretO < -200 ? 360 : 0;
                     shooterVelo = getShooterVelo(distShooter);
                     hoodCpos = getHoodCpos(distShooter);
