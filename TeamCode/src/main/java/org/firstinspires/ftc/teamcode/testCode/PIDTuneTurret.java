@@ -4,22 +4,25 @@ import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
+
+import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 
 @Configurable
 @Autonomous(name="PID Tune Turret", group="test_ftc14212")
 public class PIDTuneTurret extends OpMode {
-    private CachingDcMotorEx turret;
+    private CombinedCRServo turret;
+    private CachingDcMotorEx turretEM;
     // private AnalogInput elc;
     private PIDController controller;
-    public static double P = 0.00136;
+    public static double P = 0;
     public static double I = 0;
-    public static double D = 0.00195;
+    public static double D = 0;
     public static double F = 0;
     public static double TARGET = 0;
     public static double TPR = 4000; // ticks per revolution
@@ -32,14 +35,14 @@ public class PIDTuneTurret extends OpMode {
         // set the PID values
         controller = new PIDController(Math.sqrt(P), I, D);
         // hardware
-        turret = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "turret"));
-        // elc = hardwareMap.get(AnalogInput.class, "elc");
-        // reverse motors
-        // turret.setDirection(DcMotorEx.Direction.REVERSE);
+        CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1"));
+        CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2"));
+        turret = new CombinedCRServo(turret1, turret2);
+        turretEM = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
         // reset encoders
-        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        turretEM.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // turn on the motors without the built in controller
-        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        turretEM.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // combine both FTCDashboard and the regular telemetry
         // telemetry
         telemetry.addLine("Use this to tune the turret.");
@@ -56,7 +59,7 @@ public class PIDTuneTurret extends OpMode {
         // Get current positions
 
         double turretOR = (TPR * ratio);
-        double turretCpos = (turret.getCurrentPosition() / turretOR) * 360;
+        double turretCpos = (turretEM.getCurrentPosition() / turretOR) * 360;
         // Calculate PID
         double pid = controller.calculate(turretCpos, TARGET);
         double ff = F;
