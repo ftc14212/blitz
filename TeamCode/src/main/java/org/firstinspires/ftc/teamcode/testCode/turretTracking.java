@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
@@ -101,6 +100,12 @@ public class turretTracking extends LinearOpMode {
                 power = Math.max(-1, Math.min(1, power));
                 turret.setPower(power);
                 // telemetry
+                telemetryM.addData(true, "turretOn", turretOn);
+                telemetryM.addData(true, "redSide", redSide);
+                telemetryM.addData(true, "turretTpos", turretTpos);
+                telemetryM.addData(true, "turretCpos", turretCpos);
+                telemetryM.addData(true, "turretError", error);
+                telemetryM.addData(true, "turretPower", power);
                 telemetryM.update();
             }
         }

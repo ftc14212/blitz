@@ -203,7 +203,7 @@ public class MainV1 extends LinearOpMode {
                     shooterVelo = -75;
                     if (!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) indexerCpos = 0;
                 }
-                if (INTAKE && shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT) {
+                if (INTAKE && shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT && !ALIGN_SHOOT) {
                     indexerOn = false;
                     indexerCpos = -1;
                 }
@@ -228,6 +228,7 @@ public class MainV1 extends LinearOpMode {
                     turretTpos += turretO > 200 ? -360 : turretO < -200 ? 360 : 0;
                     shooterVelo = getShooterVelo(distShooter);
                     hoodCpos = getHoodCpos(distShooter);
+                    indexerOn = true;
                 } else if (RESET_SHOOTER_TURRET) {
                     tReset = true;
                     tResetT.reset();
