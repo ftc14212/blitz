@@ -1,12 +1,13 @@
 /***
  * MAIN V1
  * @author David Grieas - 14212 MetroBotics
- * coding for qualifier 1 - nov 16
+ * coding for qualifier 2 - dec 6th
  * started coding at 11/1/25  @  6:15 pm
 ***/
 package org.firstinspires.ftc.teamcode.teleOp;
 
 import com.arcrobotics.ftclib.controller.PIDController;
+import com.arcrobotics.ftclib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -20,10 +21,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
@@ -31,7 +29,6 @@ import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 import org.firstinspires.ftc.teamcode.utils.Variables;
-import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
@@ -43,14 +40,14 @@ public class MainV1 extends LinearOpMode {
     /**
      * MAIN V1 BY DAVID
      * @author David Grieas - 14212 MetroBotics
-     **/
+    **/
     // positions
     public static double pivotCpos = 0.45;
     public static double hoodCpos = 1;
     public static double indexerCpos = 0;
     public static double ledCpos = 0.611;
     public static double turretTpos = 0;
-    public static int shooterVelo = 0;
+    public static double shooterVelo = 0;
     // presets
     public static double blueShooter = 143;
     public static double redShooter = -49;
@@ -79,7 +76,6 @@ public class MainV1 extends LinearOpMode {
         // telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         Follower follower = Constants.createFollower(hardwareMap);
-        GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         // Limelight3A limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         // limelight3A.setPollRateHz(50);
         LynxUtils.initLynx(hardwareMap);
@@ -304,53 +300,27 @@ public class MainV1 extends LinearOpMode {
             LynxUtils.setLynxColor(0, 255, 0);
         }
     }
-    public int getShooterVelo(double distShooter) {
-        int shooterVelo = 0;
-
-        // Table values
-        double[] distances = {20, 50, 80, 120};
-        int[] velocities = {900, 1000, 1150, 1350};
-
-        // If below or above range, clamp to min/max
-        if (distShooter <= distances[0]) {
-            shooterVelo = velocities[0];
-        } else if (distShooter >= distances[distances.length - 1]) {
-            shooterVelo = velocities[velocities.length - 1];
-        } else {
-            // Linear interpolation between points
-            for (int i = 0; i < distances.length - 1; i++) {
-                if (distShooter >= distances[i] && distShooter <= distances[i + 1]) {
-                    double t = (distShooter - distances[i]) / (distances[i + 1] - distances[i]);
-                    shooterVelo = (int) (velocities[i] + t * (velocities[i + 1] - velocities[i]));
-                    break;
-                }
-            }
-        }
-        return shooterVelo;
+    public double getShooterVelo(double distShooter) {
+        InterpLUT lut = new InterpLUT();
+        // add the data
+        lut.add(20, 900);
+        lut.add(50, 1000);
+        lut.add(80, 1150);
+        lut.add(120, 1350);
+        // finish
+        lut.createLUT();
+        return lut.get(distShooter);
     }
     public double getHoodCpos(double distShooter) {
-        double hoodCpos = 0;
-
-        // Table values
-        double[] distances = {20, 50, 80, 120};
-        double[] hoods = {0.0, 0.2, 0.3, 0.45};
-
-        // If below or above range, clamp to min/max
-        if (distShooter <= distances[0]) {
-            hoodCpos = hoods[0];
-        } else if (distShooter >= distances[distances.length - 1]) {
-            hoodCpos = hoods[hoods.length - 1];
-        } else {
-            // Linear interpolation between points
-            for (int i = 0; i < distances.length - 1; i++) {
-                if (distShooter >= distances[i] && distShooter <= distances[i + 1]) {
-                    double t = (distShooter - distances[i]) / (distances[i + 1] - distances[i]);
-                    hoodCpos = hoods[i] + t * (hoods[i + 1] - hoods[i]);
-                    break;
-                }
-            }
-        }
-        return hoodCpos;
+        InterpLUT lut = new InterpLUT();
+        // add the data
+        lut.add(20, 0.0);
+        lut.add(50, 0.2);
+        lut.add(80, 0.3);
+        lut.add(120, 0.45);
+        // finish
+        lut.createLUT();
+        return lut.get(distShooter);
     }
     public double alignTurret(double x, double y, double heading, Pose target) {
         x = turretOffset + x;
