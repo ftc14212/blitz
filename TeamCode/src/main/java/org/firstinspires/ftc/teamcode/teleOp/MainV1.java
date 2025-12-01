@@ -11,7 +11,6 @@ import com.arcrobotics.ftclib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -66,7 +65,7 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
-    public static double turretOffset = -3;
+    public static double turretOffset = 0;
     public static boolean turretOn = true;
     @Override
     public void runOpMode() {
@@ -110,6 +109,7 @@ public class MainV1 extends LinearOpMode {
         leftFront.setDirection(DcMotorEx.Direction.REVERSE);
         leftRear.setDirection(DcMotorEx.Direction.REVERSE);
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
+        indexer.setDirection(DcMotorEx.Direction.REVERSE);
         // breaks
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -205,7 +205,7 @@ public class MainV1 extends LinearOpMode {
                 }
                 if (INTAKE && shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT && !ALIGN_SHOOT) {
                     indexerOn = false;
-                    indexerCpos = -1;
+                    indexerCpos = -0.9;
                 }
                 if (OUTTAKE) {
                     indexerOn = true;
@@ -223,9 +223,14 @@ public class MainV1 extends LinearOpMode {
                     if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80) ledCpos = 1;
                     else ledCpos = 0.388;
                     // turretTpos = turretOffset;
-                    double turretO = alignTurret(follower.getPose().getX(), follower.getPose().getY(), Math.toDegrees(follower.getHeading()), target);
-                    turretTpos = turretOn ? turretO : turretCpos;
-                    turretTpos += turretO > 200 ? -360 : turretO < -200 ? 360 : 0;
+                    turretTpos = turretOn ? wrap(
+                            alignTurret(
+                                    follower.getPose().getX(),
+                                    follower.getPose().getY(),
+                                    Math.toDegrees(follower.getHeading()),
+                                    target
+                            )
+                    ) : 0;
                     shooterVelo = getShooterVelo(distShooter);
                     hoodCpos = getHoodCpos(distShooter);
                     indexerOn = true;
@@ -248,16 +253,10 @@ public class MainV1 extends LinearOpMode {
                 shooterR.setVelocity(sPower); // leader
                 shooterL.setVelocity(sPower); // follower
                 // turret code
-                if (tResetT.milliseconds() > 1500) tReset = false;
-                if (Math.abs(turretCpos - turretTpos) > 2) {
-                    double power = Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F));
-                    if (tReset && turretCpos >= 130) tReset2 = true;
-                    if (tReset2) {
-                        turret.setPower(Math.abs(power));
-                        if (turretCpos < 20) tReset2 = false;
-                    }
-                    else turret.setPower(-power);
-                } else turret.setPower(0);
+                double error = turretTpos - turretCpos;
+                double power = -turretPID.calculate(0, error) + PIDTuneTurret.F;
+                power = Math.max(-1, Math.min(1, power));
+                turret.setPower(power);
                 follower.update();
                 // telemetry
                 telemetryM.addLine("BLITZ Team 14212!");
@@ -304,32 +303,48 @@ public class MainV1 extends LinearOpMode {
     public double getShooterVelo(double distShooter) {
         InterpLUT lut = new InterpLUT();
         // add the data
-        lut.add(20, 900);
-        lut.add(50, 1000);
-        lut.add(80, 1150);
-        lut.add(120, 1350);
+        lut.add(15, 900);
+        lut.add(25, 920);
+        lut.add(35, 940);
+        lut.add(45, 960);
+        lut.add(55, 985);
+        lut.add(65, 1030);
+        lut.add(75, 1100);
+        lut.add(85, 1150);
+        lut.add(125, 1320);
         // finish
         lut.createLUT();
-        return lut.get(distShooter);
+        return lut.get(Math.max(15.1, Math.min(124.9, distShooter)));
     }
     public double getHoodCpos(double distShooter) {
         InterpLUT lut = new InterpLUT();
         // add the data
-        lut.add(20, 0.0);
-        lut.add(50, 0.2);
-        lut.add(80, 0.3);
-        lut.add(120, 0.45);
+        lut.add(15, 0.0);
+        lut.add(25, 0.0);
+        lut.add(35, 0.1);
+        lut.add(45, 0.2);
+        lut.add(55, 0.32);
+        lut.add(65, 0.2);
+        lut.add(75, 0.3);
+        lut.add(85, 0.35);
+        lut.add(125, 0.45);
         // finish
         lut.createLUT();
-        return lut.get(distShooter);
+        return lut.get(Math.max(15.1, Math.min(124.9, distShooter)));
     }
-    public double alignTurret(double x, double y, double heading, Pose target) {
-        x = turretOffset + x;
-        y = 0 + y;
-        double goalX = target.getX();
-        double goalY = target.getY();
-        double angleToGoal = Math.toDegrees(Math.atan2(goalX - x, goalY - y));
-        return angleToGoal + heading - 90;
+    public double alignTurret(double x, double y, double headingDeg, Pose target) {
+        double dx = target.getX() - x;
+        double dy = target.getY() - y;
+        // angle from robot to target
+        double angleToGoal = Math.toDegrees(Math.atan2(dy, dx));
+        // turret angle = angle to goal minus robot heading
+        double turretAngle = angleToGoal - headingDeg;
+        return turretAngle - turretOffset;
     }
-
+    // wrap code
+    public double wrap(double angle) {
+        if (angle > 190) angle -= 360;
+        if (angle < -210) angle += 360;
+        return angle;
+    }
 }

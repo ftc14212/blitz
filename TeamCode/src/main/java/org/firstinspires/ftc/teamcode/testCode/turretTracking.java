@@ -26,10 +26,11 @@ public class turretTracking extends LinearOpMode {
     boolean debugMode = true;
     public static boolean redSide = false;
     public static double blueShooter = 143;
-    public static double redShooter = -49;
+    public static double redShooter = 42;
     public static double turretTpos = 0;
     public static boolean turretOn = false;
-    public static boolean turretOffset = true;
+    public static boolean turretOffset = false;
+    public static double offset = 12;
     @Override
     public void runOpMode() {
         // hardware
@@ -53,6 +54,7 @@ public class turretTracking extends LinearOpMode {
         led.setPosition(redSide ? 0.277 : 0.611);
         // start pos
         follower.setStartingPose(new Pose(56.5, 8.3, Math.toRadians(90)));
+        follower.update();
         // gamepads
         Gamepad currentGamepad1 = new Gamepad();
         Gamepad currentGamepad2 = new Gamepad();
@@ -64,8 +66,10 @@ public class turretTracking extends LinearOpMode {
         telemetryM.update();
         waitForStart();
         if (opModeIsActive()) {
+            follower.startTeleopDrive();
             while (opModeIsActive()) {
-                led.setPosition(turretOn ? redSide ? 0.277 : 0.611 : 1);
+                follower.update();
+                led.setPosition(turretOn ? redSide ? 0.3 : 0.611 : 1);
                 // gamepad stuff
                 previousGamepad1.copy(currentGamepad1);
                 previousGamepad2.copy(currentGamepad2);
@@ -73,8 +77,11 @@ public class turretTracking extends LinearOpMode {
                 currentGamepad2.copy(gamepad2);
                 // poses
                 Pose bluePos = new Pose(34.9, 121.9, Math.toRadians(blueShooter));
-                Pose redPos = new Pose(124.9, -30.5, Math.toRadians(redShooter));
+                Pose redPos = new Pose(87.9, 136.5, Math.toRadians(redShooter));
                 Pose target = redSide ? redPos : bluePos;
+                // drive
+                follower.setMaxPower(1);
+                follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
                 // vars
                 double turretCpos = (intake.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 // turret control
@@ -95,8 +102,8 @@ public class turretTracking extends LinearOpMode {
                     turretTpos = 0;
                 }
                 // turret code
-                double error = wrap(turretTpos - turretCpos);
-                double power = turretPID.calculate(0, error) + PIDTuneTurret.F;
+                double error = turretTpos - turretCpos;
+                double power = -turretPID.calculate(0, error) + PIDTuneTurret.F;
                 power = Math.max(-1, Math.min(1, power));
                 turret.setPower(power);
                 // telemetry
@@ -106,6 +113,16 @@ public class turretTracking extends LinearOpMode {
                 telemetryM.addData(true, "turretCpos", turretCpos);
                 telemetryM.addData(true, "turretError", error);
                 telemetryM.addData(true, "turretPower", power);
+                telemetryM.addData(true, "turretOffset", turretOffset);
+                telemetryM.addData(true, "\nFollower:\nX:", follower.getPose().getX());
+                telemetryM.addData(true, "Y:", follower.getPose().getY());
+                telemetryM.addData(true, "heading:", Math.toDegrees(follower.getHeading()));
+                telemetryM.addData(true, "\nredPos:\nX:", redPos.getX());
+                telemetryM.addData(true, "Y:", redPos.getY());
+                telemetryM.addData(true, "heading:", Math.toDegrees(redPos.getHeading()));
+                telemetryM.addData(true, "\nbluePos:\nX:", bluePos.getX());
+                telemetryM.addData(true, "Y:", bluePos.getY());
+                telemetryM.addData(true, "heading:", Math.toDegrees(bluePos.getHeading()));
                 telemetryM.update();
             }
         }
@@ -121,12 +138,12 @@ public class turretTracking extends LinearOpMode {
         double angleToGoal = Math.toDegrees(Math.atan2(dy, dx));
         // turret angle = angle to goal minus robot heading
         double turretAngle = angleToGoal - headingDeg;
-        return turretAngle - (turretOffset ? 90 : 0);
+        return turretAngle - (turretOffset ? offset : 0);
     }
     // wrap code
     public double wrap(double angle) {
-        while (angle > 210) angle -= 360;
-        while (angle < -210) angle += 360;
+        if (angle > 190) angle -= 360;
+        if (angle < -210) angle += 360;
         return angle;
     }
 

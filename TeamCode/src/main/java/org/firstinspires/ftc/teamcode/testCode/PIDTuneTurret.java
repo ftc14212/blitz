@@ -20,10 +20,10 @@ public class PIDTuneTurret extends OpMode {
     private CachingDcMotorEx turretEM;
     // private AnalogInput elc;
     private PIDController controller;
-    public static double P = 0;
+    public static double P = 0.00023;
     public static double I = 0;
-    public static double D = 0;
-    public static double F = 0;
+    public static double D = 0.0002;
+    public static double F = 0.02;
     public static double TARGET = 0;
     public static double TPR = 4000; // ticks per revolution
     public static double ratio = (double) 92 / 53;

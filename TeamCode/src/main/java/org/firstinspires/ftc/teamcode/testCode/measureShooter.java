@@ -41,6 +41,7 @@ public class measureShooter extends LinearOpMode {
         // servos
         CachingServo hood = new CachingServo(hardwareMap.get(Servo.class, "hood")); // 1x axon mini
         // reverse
+        indexer.setDirection(DcMotorEx.Direction.REVERSE);
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
