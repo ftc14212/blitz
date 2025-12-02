@@ -54,7 +54,7 @@ public class swerbe extends LinearOpMode {
     double lfS = 85;
     double rfS = 92;
     double lrS = 88;
-    double rrS = 90;
+    double rrS = 116;
     @Override
     public void runOpMode() {
         // hardware

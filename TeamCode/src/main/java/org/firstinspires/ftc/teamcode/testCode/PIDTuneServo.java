@@ -15,9 +15,9 @@ public class PIDTuneServo extends OpMode {
     private CachingCRServo servo;
     private AnalogInput encoder;
     private PIDController controller;
-    public static double P = 0.0001;
+    public static double P = 0.000044;
     public static double I = 0;
-    public static double D = 0.00000;
+    public static double D = 0.000048;
     public static double TARGET = 175;
 
     /**
@@ -46,14 +46,14 @@ public class PIDTuneServo extends OpMode {
         // Get current positions
         double pos = ((encoder.getVoltage() / 3.3)) * 360;
         // Calculate PID
-        double pid = -controller.calculate(pos, TARGET);
+        double pid = controller.calculate(pos, TARGET);
         // Apply power
         servo.setPower(Math.max(-1, Math.min(1, pid)));
         // telemetry for debugging
         telemetry.addData("PIDFK", "P: " + P + " I: " + I + " D: " + D);
         telemetry.addData("target", TARGET);
         telemetry.addData("current pos", pos);
-        telemetry.addData("power", pid);
+        telemetry.addData("power", servo.getPower());
         telemetry.addData("error", Math.abs(TARGET - pos));
         telemetry.update();
     }
