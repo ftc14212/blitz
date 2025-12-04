@@ -48,7 +48,7 @@ public class MainV1 extends LinearOpMode {
     public static double turretTpos = 0;
     public static double shooterVelo = 0;
     // presets
-    public static double blueShooter = 50;
+    public static double blueShooter = 144;
     public static double redShooter = -49;
     // misc
     private double wheelSpeed = wheelSpeedMax;
@@ -124,7 +124,7 @@ public class MainV1 extends LinearOpMode {
         hood.setPosition(hoodCpos = 0);
         pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
-        follower.setStartingPose(Variables.lastAutoPos == null ? new Pose(56.5, 8.3, Math.toRadians(0)) : new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
+        follower.setStartingPose(Variables.lastAutoPos == null ? new Pose(56.5, 8.3, Math.toRadians(90)) : new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
         Variables.lastAutoPos = null;
         // misc
         loopTime = new ElapsedTime();

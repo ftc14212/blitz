@@ -29,7 +29,7 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
-@Autonomous(name = "15 baller auto", group = ".ftc14212")
+@Autonomous(name = "12 baller auto", group = ".ftc14212")
 public class auto extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
@@ -81,17 +81,17 @@ public class auto extends OpMode {
     private int pathState;
     public static final Pose startPose = new Pose(56.5, 8.39, Math.toRadians(180));
     public static final Pose intakeStart1Pose = new Pose(46, 31, Math.toRadians(180));
-    public static final Pose intakeEnd1Pose = new Pose(16.5, 34, Math.toRadians(180));
+    public static final Pose intakeEnd1Pose = new Pose(17.5, 34, Math.toRadians(180));
     public static final Pose shootFarPose = new Pose(55.5, 13.36, Math.toRadians(180));
     public static final Pose grabBallsStart = new Pose(10, 44, Math.toRadians(-90));
-    public static final Pose grabBallsEnd = new Pose(7.7, 28.63, Math.toRadians(-90));
-    public static final Pose intakeStart2Pose = new Pose(47.7, 57, Math.toRadians(180));
+    public static final Pose grabBallsEnd = new Pose(7.7, 30, Math.toRadians(-90));
+    public static final Pose intakeStart2Pose = new Pose(47.7, 54, Math.toRadians(180));
     public static final Pose intakeEnd2Pose = new Pose(16.5, 59.5, Math.toRadians(180));
     public static final Pose leverEnd = new Pose(20.7, 69.2, Math.toRadians(180));
     public static final Pose leverControl = new Pose(38.7, 61.6, Math.toRadians(180));
     public static final Pose shootClosePose = new Pose(55.88, 84.65, Math.toRadians(180));
     public static final Pose shootCloseControl = new Pose(51.37, 63.54, Math.toRadians(180));
-    public static final Pose intakeEnd3Pose = new Pose(22.9, 84.85, Math.toRadians(180));
+    public static final Pose intakeEnd3Pose = new Pose(22.9, 82, Math.toRadians(180));
     public static final Pose parkPose = new Pose(51, 73.5, Math.toRadians(180));
     private PathChain intake1, scoreFar1, grabBalls, scoreFar2, intake2, lever, scoreClose1, intake3, scoreClose2, park;
     /* preload lines */
@@ -130,6 +130,7 @@ public class auto extends OpMode {
                 .setConstantHeadingInterpolation(shootFarPose.getHeading())
                 .build();
         intake2 = follower.pathBuilder()
+                // .addPath(new BezierLine(shootFarPose, intakeStart2Pose))
                 .addPath(new BezierLine(shootFarPose, intakeStart2Pose))
                 .setConstantHeadingInterpolation(intakeStart2Pose.getHeading())
                 .addPath(new BezierLine(intakeStart2Pose, intakeEnd2Pose))
@@ -225,7 +226,7 @@ public class auto extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    turretTpos = -78;
+                    turretTpos = -75;
                     shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -239,7 +240,7 @@ public class auto extends OpMode {
                     if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         INTAKE();
-                        speed = 0.9;
+                        speed = 1;
                         follower.followPath(intake1, true);
                         intake1Started = true;
                     }
@@ -254,6 +255,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
+                        indexerCpos = -0.4;
+                        shooterVelo = -500;
                         setPathState(1);
                     }
                 }
@@ -264,7 +267,7 @@ public class auto extends OpMode {
                     shootFar1Started = true;
                 }
                 if (!follower.isBusy() && shootFar1Started) {
-                    turretTpos = -78;
+                    turretTpos = -75;
                     shooterVelo = 1280;
                     hoodCpos = 0.45;
                     if (!ran2) {
@@ -283,13 +286,13 @@ public class auto extends OpMode {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
-                        setPathState(2);
+                        setPathState(4);
                     }
                 }
                 break;
             case 2:
                 if (!grabBallsStarted) {
-                    speed = 0.8;
+                    speed = 0.7;
                     INTAKE();
                     follower.followPath(grabBalls, true);
                     grabBallsStarted = true;
@@ -304,6 +307,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
+                        indexerCpos = -0.4;
+                        shooterVelo = -500;
                         setPathState(3);
                     }
                 }
@@ -314,7 +319,7 @@ public class auto extends OpMode {
                     shootFar2Started = true;
                 }
                 if (!follower.isBusy() && shootFar2Started) {
-                    turretTpos = -78;
+                    turretTpos = -75;
                     shooterVelo = 1280;
                     hoodCpos = 0.45;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -335,7 +340,7 @@ public class auto extends OpMode {
                 break;
             case 4:
                 if (!intake2Started) {
-                    speed = 0.9;
+                    speed = 1;
                     INTAKE();
                     follower.followPath(intake2, true);
                     intake2Started = true;
@@ -350,6 +355,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
+                        indexerCpos = -0.4;
+                        shooterVelo = -500;
                         setPathState(5);
                     }
                 }
@@ -390,7 +397,7 @@ public class auto extends OpMode {
                 break;
             case 7:
                 if (!intake3Started) {
-                    speed = 0.9;
+                    speed = 1;
                     INTAKE();
                     follower.followPath(intake3, true);
                     intake3Started = true;
@@ -405,6 +412,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
+                        indexerCpos = -0.4;
+                        shooterVelo = -500;
                         setPathState(8);
                     }
                 }
@@ -430,6 +439,7 @@ public class auto extends OpMode {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
+                        RESET_INTAKE();
                         setPathState(9);
                     }
                 }
