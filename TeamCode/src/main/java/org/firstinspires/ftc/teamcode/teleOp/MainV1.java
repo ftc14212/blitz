@@ -65,7 +65,7 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
-    public static double turretOffset = 0;
+    public static double turretOffset = 90;
     public static boolean turretOn = true;
     @Override
     public void runOpMode() {

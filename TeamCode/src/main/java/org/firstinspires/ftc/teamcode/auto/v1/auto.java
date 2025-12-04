@@ -2,9 +2,9 @@ package org.firstinspires.ftc.teamcode.auto.v1;
 
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -29,7 +29,7 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
-@Autonomous(name = "12 baller auto", group = ".ftc14212")
+@Autonomous(name = "15 baller auto", group = ".ftc14212")
 public class auto extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
@@ -43,7 +43,7 @@ public class auto extends OpMode {
     Gamepad previousGamepad1;
     Gamepad previousGamepad2;
     // motors
-    CachingDcMotorEx turret; // 223 rpm
+    CombinedCRServo turret; // 223 rpm
     CachingDcMotorEx shooterL; // 6000 rpm
     CachingDcMotorEx shooterR; // 6000 rpm
     CachingDcMotorEx intake; // 1150 rpm
@@ -51,7 +51,7 @@ public class auto extends OpMode {
     private static CachingServo pivot; // 1x axon max
     private static CachingServo hood; // 1x axon mini
     private static CachingServo led; // 2x gobilda led lights RGB
-    private static CombinedCRServo indexer; // 2x axon minis
+    private static CachingDcMotorEx indexer; // 2x axon minis
     // positions
     public static double pivotCpos = 0.45;
     public static double hoodCpos = 1;
@@ -68,6 +68,7 @@ public class auto extends OpMode {
     public static double redShooter = -49;
     public static boolean shooterOn = true;
     public static int intakeWait = 500;
+    public static int shootWait = 1300;
     boolean ran2 = false;
     public static Pose target;
     public double distShooter;
@@ -79,20 +80,30 @@ public class auto extends OpMode {
     public static boolean debugMode = true;
     private int pathState;
     public static final Pose startPose = new Pose(56.5, 8.39, Math.toRadians(180));
-    public static final Pose intakeStart1Pose = new Pose(40, 33.5, Math.toRadians(180));
-    public static final Pose intakeEnd1Pose = new Pose(17, 34.7, Math.toRadians(180));
-    public static final Pose shootFarPose = new Pose(59.5, 14.5, Math.toRadians(180));
-    public static final Pose intakeStart2Pose = new Pose(40.5, 59, Math.toRadians(180));
-    public static final Pose intakeEnd2Pose = new Pose(17, 59.4, Math.toRadians(180));
-    public static final Pose shootClosePose = new Pose(61.4, 83.7, Math.toRadians(180));
-    public static final Pose intakeEnd3Pose = new Pose(26, 83.9, Math.toRadians(180));
-    public static final Pose parkPose = new Pose(48.9, 66.6, Math.toRadians(180));
-    private PathChain intake1, scoreFar, intake2, scoreClose1, intake3, scoreClose2, park;
+    public static final Pose intakeStart1Pose = new Pose(46, 31, Math.toRadians(180));
+    public static final Pose intakeEnd1Pose = new Pose(16.5, 34, Math.toRadians(180));
+    public static final Pose shootFarPose = new Pose(55.5, 13.36, Math.toRadians(180));
+    public static final Pose grabBallsStart = new Pose(10, 44, Math.toRadians(-90));
+    public static final Pose grabBallsEnd = new Pose(7.7, 28.63, Math.toRadians(-90));
+    public static final Pose intakeStart2Pose = new Pose(47.7, 57, Math.toRadians(180));
+    public static final Pose intakeEnd2Pose = new Pose(16.5, 59.5, Math.toRadians(180));
+    public static final Pose leverEnd = new Pose(20.7, 69.2, Math.toRadians(180));
+    public static final Pose leverControl = new Pose(38.7, 61.6, Math.toRadians(180));
+    public static final Pose shootClosePose = new Pose(55.88, 84.65, Math.toRadians(180));
+    public static final Pose shootCloseControl = new Pose(51.37, 63.54, Math.toRadians(180));
+    public static final Pose intakeEnd3Pose = new Pose(22.9, 84.85, Math.toRadians(180));
+    public static final Pose parkPose = new Pose(51, 73.5, Math.toRadians(180));
+    private PathChain intake1, scoreFar1, grabBalls, scoreFar2, intake2, lever, scoreClose1, intake3, scoreClose2, park;
     /* preload lines */
     boolean intake1Started = false;
-    boolean shootFarStarted = false;
+    boolean shootFar1Started = false;
+    boolean grabBallsStarted = false;
+
+    boolean shootFar2Started = false;
     boolean intake2Started = false;
-    boolean scoreCloseStarted = false;
+    boolean leverStarted = false;
+
+    boolean scoreClose1Started = false;
     boolean intake3Started = false;
     boolean shootClose2Started = false;
     boolean parkStarted = false;
@@ -104,8 +115,18 @@ public class auto extends OpMode {
                 .addPath(new BezierLine(intakeStart1Pose, intakeEnd1Pose))
                 .setConstantHeadingInterpolation(intakeEnd1Pose.getHeading())
                 .build();
-        scoreFar = follower.pathBuilder()
+        scoreFar1 = follower.pathBuilder()
                 .addPath(new BezierLine(intakeEnd1Pose, shootFarPose))
+                .setConstantHeadingInterpolation(shootFarPose.getHeading())
+                .build();
+        grabBalls = follower.pathBuilder()
+                .addPath(new BezierLine(shootFarPose, grabBallsStart))
+                .setConstantHeadingInterpolation(grabBallsStart.getHeading())
+                .addPath(new BezierLine(grabBallsStart, grabBallsEnd))
+                .setConstantHeadingInterpolation(grabBallsEnd.getHeading())
+                .build();
+        scoreFar2 = follower.pathBuilder()
+                .addPath(new BezierLine(grabBallsEnd, shootFarPose))
                 .setConstantHeadingInterpolation(shootFarPose.getHeading())
                 .build();
         intake2 = follower.pathBuilder()
@@ -114,8 +135,20 @@ public class auto extends OpMode {
                 .addPath(new BezierLine(intakeStart2Pose, intakeEnd2Pose))
                 .setConstantHeadingInterpolation(intakeEnd2Pose.getHeading())
                 .build();
+        lever = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        intakeEnd2Pose,
+                        leverControl,
+                        leverEnd
+                ))
+                .setConstantHeadingInterpolation(leverEnd.getHeading())
+                .build();
         scoreClose1 = follower.pathBuilder()
-                .addPath(new BezierLine(intakeEnd2Pose, shootClosePose))
+                .addPath(new BezierCurve(
+                        leverEnd,
+                        shootCloseControl,
+                        shootClosePose
+                ))
                 .setConstantHeadingInterpolation(shootClosePose.getHeading())
                 .build();
         intake3 = follower.pathBuilder()
@@ -156,28 +189,30 @@ public class auto extends OpMode {
         previousGamepad1 = new Gamepad();
         previousGamepad2 = new Gamepad();
         // motors
-        turret = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "turret")); // 223 rpm
         shooterL = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterL")); // 6000 rpm
         shooterR = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterR")); // 6000 rpm
         intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake")); // 1150 rpm
+        indexer = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "indexer")); // 1150 rpm
         // servos
         pivot = new CachingServo(hardwareMap.get(Servo.class, "intakePivot")); // 1x axon max
         hood = new CachingServo(hardwareMap.get(Servo.class, "hood")); // 1x axon mini
-        CachingCRServo leftIndexer = new CachingCRServo(hardwareMap.get(CRServo.class, "leftIndexer")); // 1x axon mini
-        CachingCRServo rightIndexer = new CachingCRServo(hardwareMap.get(CRServo.class, "rightIndexer")); // 1x axon mini
+        CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1")); // 1x axon max
+        CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2")); // 1x axon max
         led = new CachingServo(hardwareMap.get(Servo.class, "led")); // 2x gobilda led lights RGB
-        indexer = new CombinedCRServo(leftIndexer, rightIndexer); // 2x axon minis
+        turret = new CombinedCRServo(turret1, turret2); // 2x axon maxs
         // directions
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
+        indexer.setDirection(DcMotorEx.Direction.REVERSE);
         // reset pos
-        turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // limits
         pivot.scaleRange(0, 0.4);
         // starting pos
         hood.setPosition(hoodCpos = 0);
         pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
+        indexerCpos = 0;
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
@@ -190,8 +225,8 @@ public class auto extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    turretTpos = 68;
-                    shooterVelo = 1300;
+                    turretTpos = -78;
+                    shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
@@ -201,7 +236,7 @@ public class auto extends OpMode {
                         ledCpos = 1;
                         FEED();
                     }
-                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         INTAKE();
                         speed = 0.9;
@@ -224,14 +259,18 @@ public class auto extends OpMode {
                 }
                 break;
             case 1:
-                if (!shootFarStarted) {
-                    follower.followPath(scoreFar, true);
-                    shootFarStarted = true;
+                if (!shootFar1Started) {
+                    follower.followPath(scoreFar1, true);
+                    shootFar1Started = true;
                 }
-                if (!follower.isBusy() && shootFarStarted) {
-                    turretTpos = 68;
-                    shooterVelo = 1300;
-                    hoodCpos = 0.5;
+                if (!follower.isBusy() && shootFar1Started) {
+                    turretTpos = -78;
+                    shooterVelo = 1280;
+                    hoodCpos = 0.45;
+                    if (!ran2) {
+                        indexerCpos = -0.45;
+                        ran2 = true;
+                    }
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
                             actionTimer.resetTimer();
@@ -240,7 +279,7 @@ public class auto extends OpMode {
                         ledCpos = 1;
                         FEED();
                     }
-                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
@@ -249,11 +288,11 @@ public class auto extends OpMode {
                 }
                 break;
             case 2:
-                if (!intake2Started) {
-                    speed = 0.9;
+                if (!grabBallsStarted) {
+                    speed = 0.8;
                     INTAKE();
-                    follower.followPath(intake2, true);
-                    intake2Started = true;
+                    follower.followPath(grabBalls, true);
+                    grabBallsStarted = true;
                 }
                 if (!follower.isBusy()) {
                     if (!ran2) {
@@ -270,14 +309,14 @@ public class auto extends OpMode {
                 }
                 break;
             case 3:
-                if (!scoreCloseStarted) {
-                    follower.followPath(scoreClose1, true);
-                    scoreCloseStarted = true;
+                if (!shootFar2Started) {
+                    follower.followPath(scoreFar2, true);
+                    shootFar2Started = true;
                 }
-                if (!follower.isBusy() && scoreCloseStarted) {
-                    turretTpos = 45;
-                    shooterVelo = 1050;
-                    hoodCpos = 0.2;
+                if (!follower.isBusy() && shootFar2Started) {
+                    turretTpos = -78;
+                    shooterVelo = 1280;
+                    hoodCpos = 0.45;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
                             actionTimer.resetTimer();
@@ -286,7 +325,7 @@ public class auto extends OpMode {
                         ledCpos = 1;
                         FEED();
                     }
-                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
@@ -295,11 +334,11 @@ public class auto extends OpMode {
                 }
                 break;
             case 4:
-                if (!intake3Started) {
-                    speed = 0.8;
+                if (!intake2Started) {
+                    speed = 0.9;
                     INTAKE();
-                    follower.followPath(intake3, true);
-                    intake3Started = true;
+                    follower.followPath(intake2, true);
+                    intake2Started = true;
                 }
                 if (!follower.isBusy()) {
                     if (!ran2) {
@@ -316,13 +355,68 @@ public class auto extends OpMode {
                 }
                 break;
             case 5:
+                if (!leverStarted) {
+                    follower.followPath(lever, true);
+                    leverStarted = true;
+                }
+                if (!follower.isBusy()) {
+                    setPathState(6);
+                }
+                break;
+            case 6:
+                if (!scoreClose1Started) {
+                    follower.followPath(scoreClose1, true);
+                    scoreClose1Started = true;
+                }
+                if (!follower.isBusy() && scoreClose1Started) {
+                        turretTpos = -50;
+                        shooterVelo = 960;
+                        hoodCpos = 0.2;
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(7);
+                    }
+                }
+                break;
+            case 7:
+                if (!intake3Started) {
+                    speed = 0.9;
+                    INTAKE();
+                    follower.followPath(intake3, true);
+                    intake3Started = true;
+                }
+                if (!follower.isBusy()) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(8);
+                    }
+                }
+                break;
+            case 8:
                 if (!shootClose2Started) {
                     follower.followPath(scoreClose2, true);
                     shootClose2Started = true;
                 }
                 if (!follower.isBusy() && shootClose2Started) {
-                    turretTpos = 45;
-                    shooterVelo = 1050;
+                    turretTpos = -50;
+                    shooterVelo = 960;
                     hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
@@ -332,15 +426,15 @@ public class auto extends OpMode {
                         ledCpos = 1;
                         FEED();
                     }
-                    if (actionTimer.getElapsedTime() >= shooterT && ledCpos == 1) {
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
-                        setPathState(6);
+                        setPathState(9);
                     }
                 }
                 break;
-            case 6:
+            case 9:
                 if (!follower.isBusy()) {
                     follower.followPath(park, true);
                     setPathState(-1);
@@ -375,6 +469,7 @@ public class auto extends OpMode {
         indexerCpos = 0;
         intake.setPower(0);
         shooterVelo = 0;
+        indexerOn = true;
     }
     public void FEED() {
         indexerOn = true;
@@ -401,6 +496,7 @@ public class auto extends OpMode {
         ledCpos = 0.611;
         shooterVelo = 0;
         hoodCpos = 0;
+        indexerOn = true;
     }
 
 
@@ -490,7 +586,7 @@ public class auto extends OpMode {
         Pose bluePos = new Pose(114.9, 24.7, Math.toRadians(blueShooter));
         Pose redPos = new Pose(124.9, -62, Math.toRadians(redShooter));
         target = redSide ? redPos : bluePos;
-        double turretCpos = (turret.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+        double turretCpos = (intake.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
         double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
         double turretOffset = (Math.toDegrees(follower.getHeading()) - Math.toDegrees(target.getHeading())) + turretOffsetXY;
         distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
@@ -505,20 +601,15 @@ public class auto extends OpMode {
         indexer.setPower(indexerCpos);
         led.setPosition(ledCpos);
         // shooter code
-        double sPower = shooterPID.calculate(shooterR.getVelocity(), shooterVelo) + shooterVelo;
+        double sPower = shooterOn ? shooterPID.calculate(shooterR.getVelocity(), shooterVelo) + shooterVelo : 0;
         shooterR.setVelocity(sPower); // leader
         shooterL.setVelocity(sPower); // follower
         // turret code
-        if (tResetT.milliseconds() > 1500) tReset = false;
-        if (Math.abs(turretCpos - turretTpos) > 2) {
-            double power = Math.max(-1, Math.min(1, turretPID.calculate(turretCpos, turretTpos) + PIDTuneTurret.F));
-            if (tReset && turretCpos >= 130) tReset2 = true;
-            if (tReset2) {
-                turret.setPower(Math.abs(power));
-                if (turretCpos < 20) tReset2 = false;
-            }
-            else turret.setPower(-power);
-        } else turret.setPower(0);
+        double error = turretTpos - turretCpos;
+        double power = -turretPID.calculate(0, error) + PIDTuneTurret.F;
+        power = Math.max(-1, Math.min(1, power));
+        turret.setPower(power);
+        follower.update();
         // telemetry
         telemetryM.addLine("Blitz Team 14212!");
         telemetryM.addData(true, "pivot", pivot.getPosition());
