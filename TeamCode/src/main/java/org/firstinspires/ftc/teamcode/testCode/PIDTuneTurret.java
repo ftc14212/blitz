@@ -20,7 +20,7 @@ public class PIDTuneTurret extends OpMode {
     private CachingDcMotorEx turretEM;
     // private AnalogInput elc;
     private PIDController controller;
-    public static double P = 0.00023;
+    public static double P = 0.0003;
     public static double I = 0;
     public static double D = 0.0002;
     public static double F = 0.02;

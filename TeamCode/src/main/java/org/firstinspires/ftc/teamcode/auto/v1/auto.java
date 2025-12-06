@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.auto.v1;
 
 import com.arcrobotics.ftclib.controller.PIDController;
+import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
@@ -29,6 +30,7 @@ import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
+@Configurable
 @Autonomous(name = "12 baller auto", group = ".ftc14212")
 public class auto extends OpMode {
     TelemetryM telemetryM;
@@ -85,8 +87,8 @@ public class auto extends OpMode {
     public static final Pose shootFarPose = new Pose(55.5, 13.36, Math.toRadians(180));
     public static final Pose grabBallsStart = new Pose(10, 44, Math.toRadians(-90));
     public static final Pose grabBallsEnd = new Pose(7.7, 30, Math.toRadians(-90));
-    public static final Pose intakeStart2Pose = new Pose(47.7, 54, Math.toRadians(180));
-    public static final Pose intakeEnd2Pose = new Pose(16.5, 59.5, Math.toRadians(180));
+    public static final Pose intakeStart2Pose = new Pose(48.5, 51.5, Math.toRadians(180));
+    public static final Pose intakeEnd2Pose = new Pose(16.5, 57, Math.toRadians(180));
     public static final Pose leverEnd = new Pose(20.7, 69.2, Math.toRadians(180));
     public static final Pose leverControl = new Pose(38.7, 61.6, Math.toRadians(180));
     public static final Pose shootClosePose = new Pose(55.88, 84.65, Math.toRadians(180));
@@ -237,6 +239,13 @@ public class auto extends OpMode {
                         ledCpos = 1;
                         FEED();
                     }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        speed = 1;
+                        follower.followPath(intake1, true);
+                        intake1Started = true;
+                    }
                     if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         INTAKE();
@@ -255,8 +264,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.4;
-                        shooterVelo = -500;
+                        indexerCpos = -0.5;
+                        shooterVelo = -600;
                         setPathState(1);
                     }
                 }
@@ -273,6 +282,13 @@ public class auto extends OpMode {
                     if (!ran2) {
                         indexerCpos = -0.45;
                         ran2 = true;
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(4);
                     }
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
@@ -307,8 +323,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.4;
-                        shooterVelo = -500;
+                        indexerCpos = -0.5;
+                        shooterVelo = -600;
                         setPathState(3);
                     }
                 }
@@ -330,6 +346,13 @@ public class auto extends OpMode {
                         ledCpos = 1;
                         FEED();
                     }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(4);
+                    }
                     if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         ran = false;
@@ -341,6 +364,7 @@ public class auto extends OpMode {
             case 4:
                 if (!intake2Started) {
                     speed = 1;
+                    indexerCpos = 1;
                     INTAKE();
                     follower.followPath(intake2, true);
                     intake2Started = true;
@@ -355,8 +379,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.4;
-                        shooterVelo = -500;
+                        indexerCpos = -0.5;
+                        shooterVelo = -600;
                         setPathState(5);
                     }
                 }
@@ -376,7 +400,7 @@ public class auto extends OpMode {
                     scoreClose1Started = true;
                 }
                 if (!follower.isBusy() && scoreClose1Started) {
-                        turretTpos = -50;
+                        turretTpos = -46;
                         shooterVelo = 960;
                         hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -386,6 +410,13 @@ public class auto extends OpMode {
                         }
                         ledCpos = 1;
                         FEED();
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(7);
                     }
                     if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
@@ -412,8 +443,8 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.4;
-                        shooterVelo = -500;
+                        indexerCpos = -0.5;
+                        shooterVelo = -600;
                         setPathState(8);
                     }
                 }
@@ -424,7 +455,7 @@ public class auto extends OpMode {
                     shootClose2Started = true;
                 }
                 if (!follower.isBusy() && shootClose2Started) {
-                    turretTpos = -50;
+                    turretTpos = -46;
                     shooterVelo = 960;
                     hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -434,6 +465,13 @@ public class auto extends OpMode {
                         }
                         ledCpos = 1;
                         FEED();
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(9);
                     }
                     if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
@@ -454,18 +492,16 @@ public class auto extends OpMode {
         }
     }
 
-    public boolean INTAKE() {
+    public void INTAKE() {
         pivotCpos = 0.75;
-        if (indexerOn) indexerCpos = 1;
+        indexerCpos = 1;
         intake.setPower(1);
         shooterVelo = -75;
         if (!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) indexerCpos = 0;
         if (shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT) {
             indexerOn = false;
-            indexerCpos = -1;
-            return true;
+            indexerCpos = -0.9;
         }
-        return false;
     }
 
     public void OUTTAKE() {
