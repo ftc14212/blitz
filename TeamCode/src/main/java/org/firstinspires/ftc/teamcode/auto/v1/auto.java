@@ -523,18 +523,6 @@ public class auto extends OpMode {
         indexerCpos = 1;
         intake.setPower(1);
     }
-
-    public void ALIGN_SHOOT() {
-        // if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80) ledCpos = 1;
-        // else ledCpos = 0.388;
-        // turretTpos = turretOffset;
-        double turretO = alignTurret(follower.getPose().getX(), follower.getPose().getY(), Math.toDegrees(follower.getHeading()), target);
-        turretTpos = turretO;
-        turretTpos += turretO > 200 ? -360 : turretO < -200 ? 360 : 0;
-        shooterVelo = getShooterVelo(distShooter);
-        hoodCpos = getHoodCpos(distShooter);
-    }
-
     public void RESET_SHOOTER_TURRET() {
         tReset = true;
         tResetT.reset();
@@ -544,77 +532,6 @@ public class auto extends OpMode {
         hoodCpos = 0;
         indexerOn = true;
     }
-
-
-
-
-    public int getShooterVelo(double distShooter) {
-        int shooterVelo = 0;
-        double hoodCpos = 0;
-
-        // Table values
-        double[] distances = {20, 50, 80, 120};
-        int[] velocities = {900, 1000, 1150, 1350};
-        double[] hoods = {0.0, 0.2, 0.3, 0.45};
-
-        // If below or above range, clamp to min/max
-        if (distShooter <= distances[0]) {
-            shooterVelo = velocities[0];
-            hoodCpos = hoods[0];
-        } else if (distShooter >= distances[distances.length - 1]) {
-            shooterVelo = velocities[velocities.length - 1];
-            hoodCpos = hoods[hoods.length - 1];
-        } else {
-            // Linear interpolation between points
-            for (int i = 0; i < distances.length - 1; i++) {
-                if (distShooter >= distances[i] && distShooter <= distances[i + 1]) {
-                    double t = (distShooter - distances[i]) / (distances[i + 1] - distances[i]);
-                    shooterVelo = (int) (velocities[i] + t * (velocities[i + 1] - velocities[i]));
-                    hoodCpos = hoods[i] + t * (hoods[i + 1] - hoods[i]);
-                    break;
-                }
-            }
-        }
-        return shooterVelo;
-    }
-    public double getHoodCpos(double distShooter) {
-        int shooterVelo = 0;
-        double hoodCpos = 0;
-
-        // Table values
-        double[] distances = {20, 50, 80, 120};
-        int[] velocities = {900, 1000, 1150, 1350};
-        double[] hoods = {0.0, 0.2, 0.3, 0.45};
-
-        // If below or above range, clamp to min/max
-        if (distShooter <= distances[0]) {
-            shooterVelo = velocities[0];
-            hoodCpos = hoods[0];
-        } else if (distShooter >= distances[distances.length - 1]) {
-            shooterVelo = velocities[velocities.length - 1];
-            hoodCpos = hoods[hoods.length - 1];
-        } else {
-            // Linear interpolation between points
-            for (int i = 0; i < distances.length - 1; i++) {
-                if (distShooter >= distances[i] && distShooter <= distances[i + 1]) {
-                    double t = (distShooter - distances[i]) / (distances[i + 1] - distances[i]);
-                    shooterVelo = (int) (velocities[i] + t * (velocities[i + 1] - velocities[i]));
-                    hoodCpos = hoods[i] + t * (hoods[i + 1] - hoods[i]);
-                    break;
-                }
-            }
-        }
-        return hoodCpos;
-    }
-    public double alignTurret(double x, double y, double heading, Pose target) {
-        x = turretOffset + x;
-        y = 0 + y;
-        double goalX = target.getX();
-        double goalY = target.getY();
-        double angleToGoal = Math.toDegrees(Math.atan2(goalX - x, goalY - y));
-        return angleToGoal + heading - 90;
-    }
-
 
     /**
      * These change the states of the paths and actions. It will also reset the timers of the individual switches

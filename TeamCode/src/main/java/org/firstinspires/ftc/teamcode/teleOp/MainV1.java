@@ -49,7 +49,7 @@ public class MainV1 extends LinearOpMode {
     public static double shooterVelo = 0;
     // presets
     public static double blueShooter = 144;
-    public static double redShooter = -49;
+    public static double redShooter = 37;
     // misc
     private double wheelSpeed = wheelSpeedMax;
     private boolean tReset = false;
@@ -126,7 +126,13 @@ public class MainV1 extends LinearOpMode {
         pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
         follower.setStartingPose(Variables.lastAutoPos == null ? new Pose(56.5, 8.3, Math.toRadians(90)) : new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
-        if (Variables.lastAutoPos != null) turretOffset += turretOffsetAuto;
+        if (Variables.lastAutoPos != null) {
+            if (redSide) {
+                turretOffset -= turretOffsetAuto;
+            } else {
+                turretOffset += turretOffsetAuto;
+            }
+        }
         Variables.lastAutoPos = null;
         // misc
         loopTime = new ElapsedTime();
@@ -146,7 +152,7 @@ public class MainV1 extends LinearOpMode {
             while (opModeIsActive()) {
                 // poses
                 Pose bluePos = new Pose(34.9, 121.9, Math.toRadians(blueShooter));
-                Pose redPos = new Pose(124.9, -30.5, Math.toRadians(redShooter));
+                Pose redPos = new Pose(86.2, 134.5, Math.toRadians(redShooter));
                 Pose target = redSide ? redPos : bluePos;
                 // variables
                 telemetryM.setDebug(debugMode);
@@ -341,7 +347,7 @@ public class MainV1 extends LinearOpMode {
         double angleToGoal = Math.toDegrees(Math.atan2(dy, dx));
         // turret angle = angle to goal minus robot heading
         double turretAngle = angleToGoal - headingDeg;
-        return turretAngle - turretOffset;
+        return redSide ?  turretAngle + turretOffset : turretAngle - turretOffset;
     }
     // wrap code
     public double wrap(double angle) {
