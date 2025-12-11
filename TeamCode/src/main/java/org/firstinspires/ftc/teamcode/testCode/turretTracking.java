@@ -38,16 +38,16 @@ public class turretTracking extends LinearOpMode {
         PIDController turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         // motors
-        CachingDcMotorEx intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake")); // 1150 rpm --> 460 rpm
+        CachingDcMotorEx indexer = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "indexer")); // 1150 rpm --> 460 rpm
         // servos
         CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1")); // 1x axon max
         CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2")); // 1x axon max
         CachingServo led = new CachingServo(hardwareMap.get(Servo.class, "led")); // 2x gobilda led lights RGB
         CombinedCRServo turret = new CombinedCRServo(turret1, turret2); // 2x axon maxs
         // reset encoders
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // turn on motor
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        indexer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
@@ -83,7 +83,7 @@ public class turretTracking extends LinearOpMode {
                 follower.setMaxPower(1);
                 follower.setTeleOpDrive(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, true);
                 // vars
-                double turretCpos = (intake.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+                double turretCpos = (indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 // turret control
                 if ((currentGamepad1.b && !previousGamepad1.b) || (currentGamepad2.b && !previousGamepad2.b)) turretOn = !turretOn;
                 // field side

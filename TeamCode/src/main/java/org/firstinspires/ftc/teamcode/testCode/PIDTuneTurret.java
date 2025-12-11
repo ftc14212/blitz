@@ -20,7 +20,7 @@ public class PIDTuneTurret extends OpMode {
     private CachingDcMotorEx turretEM;
     // private AnalogInput elc;
     private PIDController controller;
-    public static double P = 0.0003;
+    public static double P = 0.00045;
     public static double I = 0;
     public static double D = 0.0002;
     public static double F = 0.02;
@@ -38,7 +38,7 @@ public class PIDTuneTurret extends OpMode {
         CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1"));
         CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2"));
         turret = new CombinedCRServo(turret1, turret2);
-        turretEM = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake"));
+        turretEM = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "indexer"));
         // reset encoders
         turretEM.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // turn on the motors without the built in controller
@@ -57,9 +57,8 @@ public class PIDTuneTurret extends OpMode {
         // Update PID values
         controller.setPID(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
         // Get current positions
-
         double turretOR = (TPR * ratio);
-        double turretCpos = (turretEM.getCurrentPosition() / turretOR) * 360;
+        double turretCpos = (-turretEM.getCurrentPosition() / turretOR) * 360;
         // Calculate PID
         double pid = controller.calculate(turretCpos, TARGET);
         double ff = F;

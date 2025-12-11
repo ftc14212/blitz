@@ -9,6 +9,8 @@ package org.firstinspires.ftc.teamcode.teleOp;
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.arcrobotics.ftclib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -16,6 +18,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -26,6 +29,7 @@ import org.firstinspires.ftc.teamcode.testCode.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
+import org.firstinspires.ftc.teamcode.utils.MultipleTelemetry;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 import org.firstinspires.ftc.teamcode.utils.Variables;
 
@@ -65,20 +69,22 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
-    public static double turretOffset = -5;
+    public static double turretOffset = -10;
     public static double turretOffsetAuto = -15;
     public static boolean turretOn = true;
+    public static double backSpin = 0;
     @Override
     public void runOpMode() {
         // hardware
         PIDController shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
         PIDController turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
-        // telemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+        telemetry = new MultipleTelemetry(telemetry, PanelsTelemetry.INSTANCE.getTelemetry().getWrapper());
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         Follower follower = Constants.createFollower(hardwareMap);
         // Limelight3A limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         // limelight3A.setPollRateHz(50);
         LynxUtils.initLynx(hardwareMap);
+        DigitalChannel beams = hardwareMap.get(DigitalChannel.class, "bb");
         // gamepads
         Gamepad currentGamepad1 = new Gamepad();
         Gamepad currentGamepad2 = new Gamepad();
@@ -103,9 +109,9 @@ public class MainV1 extends LinearOpMode {
         // limits
         pivot.scaleRange(0, 0.4);
         // reset encoders
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // turn on motor
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        indexer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // reverse
         leftFront.setDirection(DcMotorEx.Direction.REVERSE);
         leftRear.setDirection(DcMotorEx.Direction.REVERSE);
@@ -139,6 +145,7 @@ public class MainV1 extends LinearOpMode {
         tResetT = new ElapsedTime();
         follower.update();
         boolean indexerOn = true;
+        beams.setMode(DigitalChannel.Mode.INPUT);
         // reset
         loopTime.reset();
         tResetT.reset();
@@ -157,7 +164,7 @@ public class MainV1 extends LinearOpMode {
                 // variables
                 telemetryM.setDebug(debugMode);
                 turretPID.setPID(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
-                double turretCpos = (intake.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+                double turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
                 double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
                 double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
@@ -208,8 +215,8 @@ public class MainV1 extends LinearOpMode {
                     pivotCpos = 0.75;
                     if (indexerOn) indexerCpos = 1;
                     intake.setPower(1);
-                    shooterVelo = -75;
-                    if (!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) indexerCpos = 0;
+                    shooterVelo = backSpin;
+                    if ((!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) || !beams.getState()) indexerCpos = 0;
                 }
                 if (INTAKE && shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT && !ALIGN_SHOOT) {
                     indexerOn = false;
@@ -299,6 +306,7 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "heading:", Math.toDegrees(bluePos.getHeading()));
                 telemetryM.addData(true, "\nturret offset XY", turretOffsetXY);
                 telemetryM.addData(true, "alignTurret", alignTurret(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading(), target));
+                telemetryM.addData(true, "beam breaks", !beams.getState());
                 telemetryM.update();
                 loopTime.reset();
             }

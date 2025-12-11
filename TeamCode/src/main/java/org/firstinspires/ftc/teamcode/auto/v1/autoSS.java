@@ -132,8 +132,8 @@ public class autoSS extends OpMode {
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
         indexer.setDirection(DcMotorEx.Direction.REVERSE);
         // reset pos
-        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        indexer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // limits
         pivot.scaleRange(0, 0.4);
         // starting pos
@@ -237,7 +237,7 @@ public class autoSS extends OpMode {
         Pose bluePos = new Pose(114.9, 24.7, Math.toRadians(blueShooter));
         Pose redPos = new Pose(124.9, -62, Math.toRadians(redShooter));
         target = redSide ? redPos : bluePos;
-        double turretCpos = (intake.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+        double turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
         double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
         double turretOffset = (Math.toDegrees(follower.getHeading()) - Math.toDegrees(target.getHeading())) + turretOffsetXY;
         distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
