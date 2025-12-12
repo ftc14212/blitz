@@ -279,7 +279,7 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "hood", hood.getPosition());
                 telemetryM.addData(true, "indexer", indexer.getPower());
                 telemetryM.addData(true, "led", led.getPosition());
-                telemetryM.addData(true, "turret", turretCpos);
+                telemetryM.addData(true, "turretCpos", turretCpos);
                 telemetryM.addData(true, "turretOffset", turretOffset);
                 telemetryM.addData(true, "bluePos", Math.toDegrees(bluePos.getHeading()));
                 telemetryM.addData(true, "redPos", Math.toDegrees(redPos.getHeading()));
@@ -320,14 +320,18 @@ public class MainV1 extends LinearOpMode {
         InterpLUT lut = new InterpLUT();
         // add the data
         lut.add(15, 900);
-        lut.add(25, 920);
-        lut.add(35, 940);
+        lut.add(25, 910);
+        lut.add(35, 945);
         lut.add(45, 960);
-        lut.add(55, 985);
+        lut.add(55, 1005);
         lut.add(65, 1030);
-        lut.add(75, 1100);
-        lut.add(85, 1150);
+        lut.add(75, 1070);
+        lut.add(85, 1110);
+        lut.add(105, 1300);
+        lut.add(109, 1260);
+        lut.add(115, 1280);
         lut.add(125, 1320);
+        lut.add(135, 1360);
         // finish
         lut.createLUT();
         return lut.get(Math.max(15.1, Math.min(124.9, distShooter)));
@@ -339,11 +343,15 @@ public class MainV1 extends LinearOpMode {
         lut.add(25, 0.0);
         lut.add(35, 0.1);
         lut.add(45, 0.2);
-        lut.add(55, 0.32);
-        lut.add(65, 0.2);
-        lut.add(75, 0.3);
-        lut.add(85, 0.35);
-        lut.add(125, 0.45);
+        lut.add(55, 0.31);
+        lut.add(65, 0.30);
+        lut.add(75, 0.23);
+        lut.add(85, 0.27);
+        lut.add(105, 0.4);
+        lut.add(109, 0.6);
+        lut.add(115, 0.25);
+        lut.add(125, 0.3);
+        lut.add(135, 0.4);
         // finish
         lut.createLUT();
         return lut.get(Math.max(15.1, Math.min(124.9, distShooter)));
