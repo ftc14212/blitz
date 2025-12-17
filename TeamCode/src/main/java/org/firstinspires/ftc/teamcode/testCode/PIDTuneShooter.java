@@ -2,11 +2,15 @@ package org.firstinspires.ftc.teamcode.testCode;
 
 import com.arcrobotics.ftclib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+import org.firstinspires.ftc.teamcode.utils.MultipleTelemetry;
+import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 
@@ -21,11 +25,14 @@ public class PIDTuneShooter extends OpMode {
     public static double D = 0;
     public static double F = 0;
     public static double TARGET = 0;
+    TelemetryM telemetryM;
     /**
      * Initialization code.
      **/
     @Override
     public void init() {
+        telemetry = new MultipleTelemetry(telemetry, PanelsTelemetry.INSTANCE.getTelemetry().getWrapper());
+        telemetryM = new TelemetryM(telemetry, true);
         // set the PID values
         controller = new PIDController(Math.sqrt(P), I, D);
         // hardware
@@ -61,14 +68,14 @@ public class PIDTuneShooter extends OpMode {
         shooterR.setVelocity(rawPower); // leader
         shooterL.setVelocity(rawPower); // follower
         // telemetry for debugging
-        telemetry.addData("PIDF", "P: " + P + " I: " + I + " D: " + D + " F: " + F);
-        telemetry.addData("target", TARGET);
-        telemetry.addData("velocityR", velocityR);
-        telemetry.addData("velocityL", velocityL);
-        telemetry.addData("rawVelocity", rawPower);
-        telemetry.addData("errorR", Math.abs(TARGET - velocityR));
-        telemetry.addData("errorL", Math.abs(TARGET - velocityL));
-        telemetry.addData("errorAvg", (Math.abs(TARGET - velocityR) + Math.abs(TARGET - velocityL)) / 2);
-        telemetry.update();
+        telemetryM.addData("PIDF", "P: " + P + " I: " + I + " D: " + D + " F: " + F);
+        telemetryM.addData("target", TARGET);
+        telemetryM.addData("velocityR", velocityR);
+        telemetryM.addData("velocityL", velocityL);
+        telemetryM.addData("rawVelocity", rawPower);
+        telemetryM.addData("errorR", Math.abs(TARGET - velocityR));
+        telemetryM.addData("errorL", Math.abs(TARGET - velocityL));
+        telemetryM.addData("errorAvg", (Math.abs(TARGET - velocityR) + Math.abs(TARGET - velocityL)) / 2);
+        telemetryM.update();
     }
 }

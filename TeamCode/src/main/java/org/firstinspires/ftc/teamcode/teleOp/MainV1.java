@@ -41,8 +41,8 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 @TeleOp(name="Main v1", group=".ftc14212")
 public class MainV1 extends LinearOpMode {
     /**
-     * MAIN V1 BY DAVID
-     * @author David Grieas - 14212 MetroBotics
+     * MAIN V1 BY JAHON
+     * @author Jahonshokh Abdullaev - 14212 MetroBotics
     **/
     // positions
     public static double pivotCpos = 0.45;
@@ -69,8 +69,8 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
-    public static double turretOffset = -10;
-    public static double turretOffsetAuto = -15;
+    public static double turretOffset = 5;
+    public static double turretOffsetAuto = 0;
     public static boolean turretOn = true;
     public static double backSpin = 0;
     @Override
@@ -133,11 +133,8 @@ public class MainV1 extends LinearOpMode {
         led.setPosition(ledCpos = 0.611);
         follower.setStartingPose(Variables.lastAutoPos == null ? new Pose(56.5, 8.3, Math.toRadians(90)) : new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
         if (Variables.lastAutoPos != null) {
-            if (redSide) {
-                turretOffset -= turretOffsetAuto;
-            } else {
-                turretOffset += turretOffsetAuto;
-            }
+            if (redSide) turretOffset -= turretOffsetAuto;
+            else turretOffset += turretOffsetAuto;
         }
         Variables.lastAutoPos = null;
         // misc
@@ -167,6 +164,7 @@ public class MainV1 extends LinearOpMode {
                 double turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
                 double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
                 double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
+                double headingOffset = Variables.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(Variables.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
                 double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
                 // status
                 boolean INTAKE = gamepad1.left_trigger > 0.1;
@@ -237,7 +235,6 @@ public class MainV1 extends LinearOpMode {
                 if (ALIGN_SHOOT) {
                     if (shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80) ledCpos = 1;
                     else ledCpos = 0.388;
-                    // turretTpos = turretOffset;
                     turretTpos = turretOn ? wrap(
                             alignTurret(
                                     follower.getPose().getX(),
@@ -286,7 +283,9 @@ public class MainV1 extends LinearOpMode {
                 telemetryM.addData(true, "turretPower", turret.getPower());
                 telemetryM.addData(true, "tReset", tReset);
                 telemetryM.addData(true, "tReset2", tReset2);
-                telemetryM.addData(true,"turret error", Math.abs(turretTpos - turretCpos));
+                telemetryM.addData(true, "turret error", Math.abs(turretTpos - turretCpos));
+                telemetryM.addData(true, "heading diff", headingOffset);
+                telemetryM.addData(true, "heading diff sqrt", headingOffset < 0 ? -Math.sqrt(Math.abs(headingOffset)) : Math.sqrt(headingOffset));
                 telemetryM.addData(true, "PIDF", "P: " + PIDTuneTurret.P + " I: " + PIDTuneTurret.I + " D: " + PIDTuneTurret.D + " F: " + PIDTuneTurret.F);
                 telemetryM.addData(true, "turretTpos", turretTpos);
                 telemetryM.addData(true, "shooterR Current", shooterR.getCurrent(CurrentUnit.MILLIAMPS));

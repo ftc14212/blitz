@@ -783,6 +783,7 @@ class TranslationalTuner extends OpMode {
         }
 
         telemetryM.debug("Push the robot laterally to test the Translational PIDF(s).");
+        telemetryM.addData("error", follower.errorCalculator.getTranslationalError().getMagnitude());
         telemetryM.update(telemetry);
     }
 }
@@ -853,6 +854,7 @@ class HeadingTuner extends OpMode {
         }
 
         telemetryM.debug("Turn the robot manually to test the Heading PIDF(s).");
+        telemetryM.addData("error", follower.errorCalculator.getHeadingError());
         telemetryM.update(telemetry);
     }
 }
@@ -930,6 +932,7 @@ class DriveTuner extends OpMode {
         }
 
         telemetryM.debug("Driving forward?: " + forward);
+        telemetryM.addData("error", follower.errorCalculator.getDriveError());
         telemetryM.update(telemetry);
     }
 }
