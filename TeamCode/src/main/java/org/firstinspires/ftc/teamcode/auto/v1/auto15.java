@@ -13,13 +13,13 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.teleOp.MainV1;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
@@ -32,8 +32,8 @@ import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Configurable
-@Autonomous(name = "12 baller auto RED", group = ".ftc14212")
-public class autoRS extends OpMode {
+@Autonomous(name = "15 baller auto", group = ".ftc14212")
+public class auto15 extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
@@ -66,36 +66,36 @@ public class autoRS extends OpMode {
     private boolean tReset2 = false;
     public boolean SHOOTER_READY = false;
     public static boolean redSide = false;
-    public static double turretOffset = -3;
     public static double blueShooter = 43;
     public static double redShooter = -49;
     public static boolean shooterOn = true;
     public static int intakeWait = 500;
     public static int shootWait = 1300;
+    public static double turretPOffset = -0.0002;
     boolean ran2 = false;
     public static Pose target;
     public double distShooter;
     boolean ran = false;
     public static boolean indexerOn = true;
-    public static int shooterT = 3500;
     private ElapsedTime tResetT;
     public static double speed = 1;
     public static boolean debugMode = true;
+    DigitalChannel beams;
     private int pathState;
-    public static final Pose startPose = auto12.startPose.mirror();
-    public static final Pose intakeStart1Pose = auto12.intakeStart1Pose.mirror();
-    public static final Pose intakeEnd1Pose = auto12.intakeEnd1Pose.mirror();
-    public static final Pose shootFarPose = auto12.shootFarPose.mirror();
-    public static final Pose grabBallsStart = auto12.grabBallsStart.mirror();
-    public static final Pose grabBallsEnd = auto12.grabBallsEnd.mirror();
-    public static final Pose intakeStart2Pose = auto12.intakeStart2Pose.mirror();
-    public static final Pose intakeEnd2Pose = auto12.intakeEnd2Pose.mirror();
-    public static final Pose leverEnd = auto12.leverEnd.mirror();
-    public static final Pose leverControl = auto12.leverControl.mirror();
-    public static final Pose shootClosePose = auto12.shootClosePose.mirror();
-    public static final Pose shootCloseControl = auto12.shootCloseControl.mirror();
-    public static final Pose intakeEnd3Pose = auto12.intakeEnd3Pose.mirror();
-    public static final Pose parkPose = auto12.parkPose.mirror();
+    public static final Pose startPose = new Pose(56.5, 8.39, Math.toRadians(180));
+    public static final Pose intakeStart1Pose = new Pose(46, 31, Math.toRadians(180));
+    public static final Pose intakeEnd1Pose = new Pose(19.5, 34, Math.toRadians(180));
+    public static final Pose shootFarPose = new Pose(55.5, 13.36, Math.toRadians(180));
+    public static final Pose grabBallsStart = new Pose(17.4, 11.2, Math.toRadians(-165));
+    public static final Pose grabBallsEnd = new Pose(11.5, 9.7, Math.toRadians(-180));
+    public static final Pose intakeStart2Pose = new Pose(48.5, 51.5, Math.toRadians(180));
+    public static final Pose intakeEnd2Pose = new Pose(19, 57, Math.toRadians(180));
+    public static final Pose leverEnd = new Pose(20.7, 69.2, Math.toRadians(180));
+    public static final Pose leverControl = new Pose(38.7, 61.6, Math.toRadians(180));
+    public static final Pose shootClosePose = new Pose(55.88, 84.65, Math.toRadians(180));
+    public static final Pose shootCloseControl = new Pose(51.37, 63.54, Math.toRadians(180));
+    public static final Pose intakeEnd3Pose = new Pose(25, 82, Math.toRadians(180));
+    public static final Pose parkPose = new Pose(51, 73.5, Math.toRadians(180));
     private PathChain intake1, scoreFar1, grabBalls, scoreFar2, intake2, lever, scoreClose1, intake3, scoreClose2, park;
     /* preload lines */
     boolean intake1Started = false;
@@ -186,7 +186,8 @@ public class autoRS extends OpMode {
         follower.setStartingPose(startPose);
         // hi
         shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
-        turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
+        turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P + turretPOffset), PIDTuneTurret.I, PIDTuneTurret.D);
+        beams = hardwareMap.get(DigitalChannel.class, "bb");
         // gamepads
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -205,6 +206,7 @@ public class autoRS extends OpMode {
         led = new CachingServo(hardwareMap.get(Servo.class, "led")); // 2x gobilda led lights RGB
         turret = new CombinedCRServo(turret1, turret2); // 2x axon maxs
         // directions
+        beams.setMode(DigitalChannel.Mode.INPUT);
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
         indexer.setDirection(DcMotorEx.Direction.REVERSE);
         // reset pos
@@ -229,7 +231,7 @@ public class autoRS extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    turretTpos = 70;
+                    turretTpos = -68;
                     shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -265,8 +267,6 @@ public class autoRS extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(1);
                     }
                 }
@@ -277,9 +277,9 @@ public class autoRS extends OpMode {
                     shootFar1Started = true;
                 }
                 if (!follower.isBusy() && shootFar1Started) {
-                    turretTpos = 70;
+                    turretTpos = -68;
                     shooterVelo = 1280;
-                    hoodCpos = 0.45;
+                    hoodCpos = 0.5;
                     if (!ran2) {
                         indexerCpos = -0.45;
                         ran2 = true;
@@ -303,13 +303,13 @@ public class autoRS extends OpMode {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
-                        setPathState(4);
+                        setPathState(2);
                     }
                 }
                 break;
             case 2:
                 if (!grabBallsStarted) {
-                    speed = 0.7;
+                    speed = 0.65  ;
                     INTAKE();
                     follower.followPath(grabBalls, true);
                     grabBallsStarted = true;
@@ -324,8 +324,6 @@ public class autoRS extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(3);
                     }
                 }
@@ -336,9 +334,9 @@ public class autoRS extends OpMode {
                     shootFar2Started = true;
                 }
                 if (!follower.isBusy() && shootFar2Started) {
-                    turretTpos = 70;
+                    turretTpos = -68;
                     shooterVelo = 1280;
-                    hoodCpos = 0.45;
+                    hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
                             actionTimer.resetTimer();
@@ -380,8 +378,6 @@ public class autoRS extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(5);
                     }
                 }
@@ -401,7 +397,7 @@ public class autoRS extends OpMode {
                     scoreClose1Started = true;
                 }
                 if (!follower.isBusy() && scoreClose1Started) {
-                        turretTpos = 46;
+                        turretTpos = -46;
                         shooterVelo = 960;
                         hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -444,8 +440,6 @@ public class autoRS extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(8);
                     }
                 }
@@ -456,7 +450,7 @@ public class autoRS extends OpMode {
                     shootClose2Started = true;
                 }
                 if (!follower.isBusy() && shootClose2Started) {
-                    turretTpos = 46;
+                    turretTpos = -46;
                     shooterVelo = 960;
                     hoodCpos = 0.2;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -494,15 +488,11 @@ public class autoRS extends OpMode {
     }
 
     public void INTAKE() {
+        indexerOn = false;
         pivotCpos = 0.75;
         indexerCpos = 1;
         intake.setPower(1);
-        shooterVelo = -75;
-        if (!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) indexerCpos = 0;
-        if (shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT) {
-            indexerOn = false;
-            indexerCpos = -0.9;
-        }
+        shooterVelo = -65;
     }
 
     public void OUTTAKE() {
@@ -555,6 +545,7 @@ public class autoRS extends OpMode {
         double turretOffset = (Math.toDegrees(follower.getHeading()) - Math.toDegrees(target.getHeading())) + turretOffsetXY;
         distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
         SHOOTER_READY = shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80;
+        if (!beams.getState() && !indexerOn) indexerCpos = 0;
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         follower.setMaxPower(speed);
@@ -636,7 +627,6 @@ public class autoRS extends OpMode {
      **/
     @Override
     public void stop() {
-        MainV1.redSide = true;
         Variables.lastAutoPos = follower.getPose();
     }
 }

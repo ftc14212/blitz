@@ -41,12 +41,12 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 @TeleOp(name="Main v1", group=".ftc14212")
 public class MainV1 extends LinearOpMode {
     /**
-     * MAIN V1 BY JAHON
-     * @author Jahonshokh Abdullaev - 14212 MetroBotics
+     * MAIN V1 BY DAVID
+     * @author David Grieas - 14212 MetroBotics
     **/
     // positions
     public static double pivotCpos = 0.45;
-    public static double hoodCpos = 1;
+    public static double hoodCpos = 0;
     public static double indexerCpos = 0;
     public static double ledCpos = 0.611;
     public static double turretTpos = 0;
@@ -69,10 +69,11 @@ public class MainV1 extends LinearOpMode {
     public static boolean redSide = false;
     public static boolean debugMode = true;
     public static double wheelSpeedMax = 1;
-    public static double turretOffset = 5;
+    public static double turretOffset = -5;
     public static double turretOffsetAuto = 0;
     public static boolean turretOn = true;
     public static double backSpin = 0;
+    public static double shooterOffset = 8;
     @Override
     public void runOpMode() {
         // hardware
@@ -122,7 +123,6 @@ public class MainV1 extends LinearOpMode {
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        // turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         // colors
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
@@ -166,6 +166,7 @@ public class MainV1 extends LinearOpMode {
                 double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
                 double headingOffset = Variables.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(Variables.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
                 double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
+                distShooter += shooterOffset;
                 // status
                 boolean INTAKE = gamepad1.left_trigger > 0.1;
                 boolean OUTTAKE = gamepad1.right_trigger > 0.1;

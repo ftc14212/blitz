@@ -13,6 +13,7 @@ import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -32,7 +33,7 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Configurable
 @Autonomous(name = "12 baller auto", group = ".ftc14212")
-public class auto extends OpMode {
+public class auto12 extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
@@ -65,35 +66,35 @@ public class auto extends OpMode {
     private boolean tReset2 = false;
     public boolean SHOOTER_READY = false;
     public static boolean redSide = false;
-    public static double turretOffset = -3;
     public static double blueShooter = 43;
     public static double redShooter = -49;
     public static boolean shooterOn = true;
     public static int intakeWait = 500;
     public static int shootWait = 1300;
+    public static double turretPOffset = -0.0002;
     boolean ran2 = false;
     public static Pose target;
     public double distShooter;
     boolean ran = false;
     public static boolean indexerOn = true;
-    public static int shooterT = 3500;
     private ElapsedTime tResetT;
     public static double speed = 1;
     public static boolean debugMode = true;
+    DigitalChannel beams;
     private int pathState;
     public static final Pose startPose = new Pose(56.5, 8.39, Math.toRadians(180));
     public static final Pose intakeStart1Pose = new Pose(46, 31, Math.toRadians(180));
-    public static final Pose intakeEnd1Pose = new Pose(17.5, 34, Math.toRadians(180));
+    public static final Pose intakeEnd1Pose = new Pose(19.5, 34, Math.toRadians(180));
     public static final Pose shootFarPose = new Pose(55.5, 13.36, Math.toRadians(180));
     public static final Pose grabBallsStart = new Pose(10, 44, Math.toRadians(-90));
     public static final Pose grabBallsEnd = new Pose(7.7, 30, Math.toRadians(-90));
     public static final Pose intakeStart2Pose = new Pose(48.5, 51.5, Math.toRadians(180));
-    public static final Pose intakeEnd2Pose = new Pose(16.5, 57, Math.toRadians(180));
+    public static final Pose intakeEnd2Pose = new Pose(19, 57, Math.toRadians(180));
     public static final Pose leverEnd = new Pose(20.7, 69.2, Math.toRadians(180));
     public static final Pose leverControl = new Pose(38.7, 61.6, Math.toRadians(180));
     public static final Pose shootClosePose = new Pose(55.88, 84.65, Math.toRadians(180));
     public static final Pose shootCloseControl = new Pose(51.37, 63.54, Math.toRadians(180));
-    public static final Pose intakeEnd3Pose = new Pose(22.9, 82, Math.toRadians(180));
+    public static final Pose intakeEnd3Pose = new Pose(25, 82, Math.toRadians(180));
     public static final Pose parkPose = new Pose(51, 73.5, Math.toRadians(180));
     private PathChain intake1, scoreFar1, grabBalls, scoreFar2, intake2, lever, scoreClose1, intake3, scoreClose2, park;
     /* preload lines */
@@ -185,7 +186,8 @@ public class auto extends OpMode {
         follower.setStartingPose(startPose);
         // hi
         shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
-        turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
+        turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P + turretPOffset), PIDTuneTurret.I, PIDTuneTurret.D);
+        beams = hardwareMap.get(DigitalChannel.class, "bb");
         // gamepads
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -204,6 +206,7 @@ public class auto extends OpMode {
         led = new CachingServo(hardwareMap.get(Servo.class, "led")); // 2x gobilda led lights RGB
         turret = new CombinedCRServo(turret1, turret2); // 2x axon maxs
         // directions
+        beams.setMode(DigitalChannel.Mode.INPUT);
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
         indexer.setDirection(DcMotorEx.Direction.REVERSE);
         // reset pos
@@ -228,7 +231,7 @@ public class auto extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    turretTpos = -75;
+                    turretTpos = -68;
                     shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -264,8 +267,6 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(1);
                     }
                 }
@@ -276,9 +277,9 @@ public class auto extends OpMode {
                     shootFar1Started = true;
                 }
                 if (!follower.isBusy() && shootFar1Started) {
-                    turretTpos = -75;
+                    turretTpos = -68;
                     shooterVelo = 1280;
-                    hoodCpos = 0.45;
+                    hoodCpos = 0.5;
                     if (!ran2) {
                         indexerCpos = -0.45;
                         ran2 = true;
@@ -323,8 +324,6 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(3);
                     }
                 }
@@ -335,9 +334,9 @@ public class auto extends OpMode {
                     shootFar2Started = true;
                 }
                 if (!follower.isBusy() && shootFar2Started) {
-                    turretTpos = -75;
+                    turretTpos = -68;
                     shooterVelo = 1280;
-                    hoodCpos = 0.45;
+                    hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
                         if (!ran) {
                             actionTimer.resetTimer();
@@ -379,8 +378,6 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(5);
                     }
                 }
@@ -443,8 +440,6 @@ public class auto extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
-                        indexerCpos = -0.5;
-                        shooterVelo = -600;
                         setPathState(8);
                     }
                 }
@@ -493,15 +488,11 @@ public class auto extends OpMode {
     }
 
     public void INTAKE() {
+        indexerOn = false;
         pivotCpos = 0.75;
         indexerCpos = 1;
         intake.setPower(1);
-        shooterVelo = -75;
-        if (!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) indexerCpos = 0;
-        if (shooterR.getCurrent(CurrentUnit.MILLIAMPS) >= shooterT) {
-            indexerOn = false;
-            indexerCpos = -0.9;
-        }
+        shooterVelo = -65;
     }
 
     public void OUTTAKE() {
@@ -554,6 +545,7 @@ public class auto extends OpMode {
         double turretOffset = (Math.toDegrees(follower.getHeading()) - Math.toDegrees(target.getHeading())) + turretOffsetXY;
         distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
         SHOOTER_READY = shooterR.getVelocity() >= shooterVelo && shooterR.getVelocity() <= shooterVelo + 80;
+        if (!beams.getState() && !indexerOn) indexerCpos = 0;
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         follower.setMaxPower(speed);
