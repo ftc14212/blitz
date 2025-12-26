@@ -20,8 +20,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.testCode.PIDTuneShooter;
-import org.firstinspires.ftc.teamcode.testCode.PIDTuneTurret;
+import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneShooter;
+import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
