@@ -6,8 +6,8 @@
 ***/
 package org.firstinspires.ftc.teamcode.teleOp;
 
-import com.arcrobotics.ftclib.controller.PIDController;
-import com.arcrobotics.ftclib.util.InterpLUT;
+import com.seattlesolvers.solverslib.controller.PIDController;
+import com.seattlesolvers.solverslib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.pedropathing.follower.Follower;

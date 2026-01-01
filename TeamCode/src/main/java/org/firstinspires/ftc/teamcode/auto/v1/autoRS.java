@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.auto.v1;
 
-import com.arcrobotics.ftclib.controller.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;

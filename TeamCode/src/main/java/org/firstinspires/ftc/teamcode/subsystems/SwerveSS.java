@@ -7,7 +7,7 @@
 ***/
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.arcrobotics.ftclib.controller.PIDController;
+import com.seattlesolvers.solverslib.controller.PIDController;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
