@@ -28,29 +28,29 @@ public class PIDTuneTurretAnalog extends OpMode {
 
     // Analog encoder settings
     public static double MAX_VOLTAGE = 3.3;
-    public static double OFFSET_DEG = 0;
+
+    // Turret zero offset (APPLIED IN TURRET SPACE)
+    public static double OFFSET_DEG = -250;
 
     // Gear ratio: turret / encoder
-    public static double GEAR_RATIO = 92.0 / 53.0;
+    public static double GEAR_RATIO = 53.0 / 92.0;
 
     // Multi-turn tracking
     private double lastEncoderDeg = 0;
     private int turnCount = 0;
     private boolean firstLoop = true;
+    public static int turretMaxDeg = 500;
 
     @Override
     public void init() {
         controller = new PIDController(Math.sqrt(P), I, D);
 
-        CachingCRServo turret1 = new CachingCRServo(
-                hardwareMap.get(CRServo.class, "turret1"));
-        CachingCRServo turret2 = new CachingCRServo(
-                hardwareMap.get(CRServo.class, "turret2"));
+        CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1"));
+        CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2"));
         turret = new CombinedCRServo(turret1, turret2);
 
         elc = hardwareMap.get(AnalogInput.class, "elc");
-
-        telemetry.addLine("PID Tune Turret analog");
+        telemetry.addLine("PID Tune Turret Analog");
         telemetry.update();
     }
 
@@ -59,26 +59,29 @@ public class PIDTuneTurretAnalog extends OpMode {
         controller.setPID(Math.sqrt(P), I, D);
 
         /* =============================
-           Absolute encoder angle (0–360)
+           Absolute encoder (-180 to +180)
            ============================= */
         double voltage = elc.getVoltage();
-        double encoderDeg = (voltage / MAX_VOLTAGE) * 360.0 + OFFSET_DEG;
-        encoderDeg = (encoderDeg % 360 + 360) % 360;
+        double encoderDeg = (voltage / MAX_VOLTAGE) * 360.0;
+
+        // FIX: center angle to -180 .. +180 (NO 0–360 wrap)
+        encoderDeg = ((encoderDeg + turretMaxDeg)) - (double) turretMaxDeg /2;
 
         /* =============================
            Multi-turn unwrap
            ============================= */
         if (firstLoop) {
             lastEncoderDeg = encoderDeg;
+            turnCount = 0; // FIX
             firstLoop = false;
         }
 
         double delta = encoderDeg - lastEncoderDeg;
 
         if (delta > 180) {
-            turnCount--; // wrapped backward
+            turnCount--;
         } else if (delta < -180) {
-            turnCount++; // wrapped forward
+            turnCount++;
         }
 
         lastEncoderDeg = encoderDeg;
@@ -86,9 +89,10 @@ public class PIDTuneTurretAnalog extends OpMode {
         double encoderMultiTurnDeg = encoderDeg + turnCount * 360.0;
 
         /* =============================
-           Apply gear ratio
+           Apply gear ratio + offset
            ============================= */
-        double turretCpos = encoderMultiTurnDeg * GEAR_RATIO;
+        double turretCpos =
+                encoderMultiTurnDeg * GEAR_RATIO + OFFSET_DEG; // FIX
 
         /* =============================
            PID
@@ -103,9 +107,9 @@ public class PIDTuneTurretAnalog extends OpMode {
            Telemetry
            ============================= */
         telemetry.addData("Voltage", voltage);
-        telemetry.addData("Encoder Deg (abs)", encoderDeg);
+        telemetry.addData("Encoder Deg", encoderDeg);
         telemetry.addData("Turns", turnCount);
-        telemetry.addData("Encoder Deg (MT)", encoderMultiTurnDeg);
+        telemetry.addData("Encoder MT Deg", encoderMultiTurnDeg);
         telemetry.addData("Turret Deg", turretCpos);
         telemetry.addData("Target", TARGET);
         telemetry.addData("Power", rawPower);
