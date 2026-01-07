@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurretAnalog;
@@ -37,7 +38,8 @@ public class turretTracking extends LinearOpMode {
     public static boolean imu = true;
     public static double turretOffset = -5;
     public static double llOffset = 0;
-    public static double scalar = 2;
+    public static boolean pose3d = false;
+    double visionCorrection;
     LLResult result = null;
     @Override
     public void runOpMode() {
@@ -100,19 +102,30 @@ public class turretTracking extends LinearOpMode {
             // turret control
             if ((currentGamepad1.b && !previousGamepad1.b) || (currentGamepad2.b && !previousGamepad2.b)) turretOn = !turretOn;
             if ((currentGamepad1.a && !previousGamepad1.a) || (currentGamepad2.a && !previousGamepad2.a)) imu = !imu;
-            // field side
-            if ((currentGamepad1.share && !previousGamepad1.share) || (currentGamepad2.share && !previousGamepad2.share)) redSide = !redSide;
+            if ((currentGamepad1.x && !previousGamepad1.x) || (currentGamepad2.x && !previousGamepad2.x)) pose3d = !pose3d;
+            if ((currentGamepad1.y && !previousGamepad1.y) || (currentGamepad2.y && !previousGamepad2.y)) redSide = !redSide;
             // turret control
-            if (imu) turretTpos = turretOn ? wrap(alignTurret(
-                    follower.getPose().getX(),
-                    follower.getPose().getY(),
-                    Math.toDegrees(follower.getHeading()),
-                    target)) : 0;
-            if (turretOn && result != null && imu) turretTpos += Math.toDegrees(-result.getTx()) + llOffset;
-            if (turretOn && result != null && !imu) turretTpos = Math.toDegrees(-result.getTx()) + llOffset;
+            if (turretOn) {
+                if (imu) {
+                    turretTpos = alignTurret(
+                            follower.getPose().getX(),
+                            follower.getPose().getY(),
+                            Math.toDegrees(follower.getHeading()),
+                            target
+                    );
+                } else {
+                    turretTpos = 0;
+                }
+                if (result != null) {
+                    if (!pose3d) visionCorrection = -result.getTx() + llOffset;
+                    else visionCorrection = getPoseBasedYaw(result) + llOffset;
+                    turretTpos += visionCorrection;
+                }
+                turretTpos = wrap(turretTpos);
+            }
             // turret code
-            double error = turretTpos - turretCpos;
-            double power = -turretPID.calculate(0, error) + PIDTuneTurret.F;
+            double error = wrap(turretTpos - turretCpos);
+            double power = turretPID.calculate(error) + PIDTuneTurret.F;
             power = Math.max(-1, Math.min(1, power));
             turret.setPower(power);
             // telemetry
@@ -122,10 +135,18 @@ public class turretTracking extends LinearOpMode {
             telemetryM.addData(true, "error", error);
             telemetryM.addData(true, "power", power);
             telemetryM.addData(true, "imu", imu);
+            telemetryM.addData(true, "pose3d", pose3d);
+            telemetryM.addData(true, "redSide", redSide);
+            telemetryM.addData(true, "visionCorrection", result != null ? -result.getTx() + llOffset : 0);
+            telemetryM.addData(true, "fieldAngle", imu ? turretTpos - (result != null ? -result.getTx() : 0) : 0);
             if (result != null) {
                 telemetryM.addData(true, "\ntx", result.getTx());
                 telemetryM.addData(true, "ty", result.getTy());
                 telemetryM.addData(true, "ta", result.getTa());
+                Pose3D pose = result.getBotpose_MT2();
+                telemetryM.addData(true, "poseX", pose.getPosition().x);
+                telemetryM.addData(true, "poseZ", pose.getPosition().z);
+                telemetryM.addData(true, "poseYaw", getPoseBasedYaw(result));
             }
             telemetryM.update();
         }
@@ -145,5 +166,14 @@ public class turretTracking extends LinearOpMode {
         if (angle > 190) angle -= 360;
         if (angle < -210) angle += 360;
         return angle;
+    }
+    // limelight pose code
+    public double getPoseBasedYaw(LLResult result) {
+        if (result == null || !result.isValid()) return 0;
+        Pose3D pose = result.getBotpose_MT2();
+        if (pose == null) return 0;
+        double x = pose.getPosition().x; // negate if wrong way
+        double z = pose.getPosition().z;
+        return Math.toDegrees(Math.atan2(x, z));
     }
 }
