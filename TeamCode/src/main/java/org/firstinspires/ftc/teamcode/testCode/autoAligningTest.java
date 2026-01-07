@@ -48,7 +48,7 @@ public class autoAligningTest extends LinearOpMode {
         hardwareMap.get(IMU.class, "imu").resetYaw();
         // telemetry
         telemetryM.addLine("Metrobotics Team 14212!");
-        telemetryM.addLine(true, "INIT DONE!");
+        telemetryM.addLine(true, "INIT DONE!");//hi
         telemetryM.update();
         waitForStart();
         if (opModeIsActive()) {
