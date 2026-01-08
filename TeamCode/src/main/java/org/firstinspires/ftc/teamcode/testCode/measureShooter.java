@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneShooter;
+import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;

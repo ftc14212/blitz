@@ -20,8 +20,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.teleOp.MainV1;
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneShooter;
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurret;
+import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooter;
+import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
@@ -33,7 +33,7 @@ import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Configurable
 @Autonomous(name = "12 baller auto RED", group = ".ftc14212")
-public class autoRS extends OpMode {
+public class auto12RS extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;

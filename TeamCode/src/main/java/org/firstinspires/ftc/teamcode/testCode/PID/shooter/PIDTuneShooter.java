@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.testCode.PID;
+package org.firstinspires.ftc.teamcode.testCode.PID.shooter;
 
 import com.seattlesolvers.solverslib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;

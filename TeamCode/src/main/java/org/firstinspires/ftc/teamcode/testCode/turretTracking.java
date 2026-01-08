@@ -10,15 +10,13 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurret;
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurretAnalog;
+import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 

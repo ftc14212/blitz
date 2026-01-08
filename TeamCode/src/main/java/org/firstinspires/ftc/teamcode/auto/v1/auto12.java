@@ -20,8 +20,8 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneShooter;
-import org.firstinspires.ftc.teamcode.testCode.PID.PIDTuneTurret;
+import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooter;
+import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
@@ -231,7 +231,7 @@ public class auto12 extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    turretTpos = -68;
+                    turretTpos = -65;
                     shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
@@ -277,7 +277,7 @@ public class auto12 extends OpMode {
                     shootFar1Started = true;
                 }
                 if (!follower.isBusy() && shootFar1Started) {
-                    turretTpos = -68;
+                    turretTpos = -65;
                     shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (!ran2) {
@@ -334,7 +334,7 @@ public class auto12 extends OpMode {
                     shootFar2Started = true;
                 }
                 if (!follower.isBusy() && shootFar2Started) {
-                    turretTpos = -68;
+                    turretTpos = -65;
                     shooterVelo = 1280;
                     hoodCpos = 0.5;
                     if (shooterR.getVelocity() >= shooterVelo) {
