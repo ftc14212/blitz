@@ -1,24 +1,24 @@
-package org.firstinspires.ftc.teamcode.testCode;
+package org.firstinspires.ftc.teamcode.twyls;
 
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.seattlesolvers.solverslib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.seattlesolvers.solverslib.controller.PIDController;
 
 import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooter;
-import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooterSdk;
+import org.firstinspires.ftc.teamcode.utils.CombinedServo;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Configurable
-@TeleOp(name = "measureShooter", group = "test_ftc14212")
-public class measureShooter extends LinearOpMode {
+@TeleOp(name = "measureShooter twyls", group = "test_ftc14212")
+public class measureShooterTwyls extends LinearOpMode {
     boolean debugMode = true;
     public static int shooterVelo = 0;
     public static double hoodCpos = 0;
@@ -32,7 +32,9 @@ public class measureShooter extends LinearOpMode {
         CachingDcMotorEx shooterR = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterR")); // 6000 rpm
         CachingDcMotorEx indexer = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "indexer")); // 1150 rpm
         // servos
-        CachingServo hood = new CachingServo(hardwareMap.get(Servo.class, "hood")); // 1x axon mini
+        CachingServo hood1 = new CachingServo(hardwareMap.get(Servo.class, "hood1")); // 1x axon mini
+        CachingServo hood2 = new CachingServo(hardwareMap.get(Servo.class, "hood2")); // 1x axon mini
+        CombinedServo hood = new CombinedServo(hood1, hood2); // 2x axon minis
         // reverse
         indexer.setDirection(DcMotorEx.Direction.REVERSE);
         shooterL.setDirection(DcMotorEx.Direction.REVERSE);
@@ -47,8 +49,8 @@ public class measureShooter extends LinearOpMode {
         waitForStart();
         if (opModeIsActive()) {
             while (opModeIsActive()) {
-                shooterL.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
-                shooterR.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
+                shooterL.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdkTwyls.P,PIDTuneShooterSdkTwyls.I,PIDTuneShooterSdkTwyls.D,PIDTuneShooterSdkTwyls.F));
+                shooterR.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdkTwyls.P,PIDTuneShooterSdkTwyls.I,PIDTuneShooterSdkTwyls.D,PIDTuneShooterSdkTwyls.F));
                 indexer.setPower(1);
                 hood.setPosition(hoodCpos);
                 shooterR.setVelocity(shooterVelo); // leader
