@@ -31,6 +31,7 @@ public class measureShooterTwyls extends LinearOpMode {
         CachingDcMotorEx shooterL = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterL")); // 6000 rpm
         CachingDcMotorEx shooterR = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterR")); // 6000 rpm
         CachingDcMotorEx indexer = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "indexer")); // 1150 rpm
+        CachingDcMotorEx intake = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "intake")); // 1620 rpm
         // servos
         CachingServo hood1 = new CachingServo(hardwareMap.get(Servo.class, "hood1")); // 1x axon mini
         CachingServo hood2 = new CachingServo(hardwareMap.get(Servo.class, "hood2")); // 1x axon mini
@@ -52,6 +53,7 @@ public class measureShooterTwyls extends LinearOpMode {
                 shooterL.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdkTwyls.P,PIDTuneShooterSdkTwyls.I,PIDTuneShooterSdkTwyls.D,PIDTuneShooterSdkTwyls.F));
                 shooterR.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdkTwyls.P,PIDTuneShooterSdkTwyls.I,PIDTuneShooterSdkTwyls.D,PIDTuneShooterSdkTwyls.F));
                 indexer.setPower(1);
+                intake.setPower(1);
                 hood.setPosition(hoodCpos);
                 shooterR.setVelocity(shooterVelo); // leader
                 shooterL.setVelocity(shooterVelo); // follower
