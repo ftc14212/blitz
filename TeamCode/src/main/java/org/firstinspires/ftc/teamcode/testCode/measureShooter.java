@@ -25,7 +25,6 @@ public class measureShooter extends LinearOpMode {
     @Override
     public void runOpMode() {
         // hardware
-        PIDController shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
         TelemetryM telemetryM = new TelemetryM(telemetry, debugMode);
         // motors
         CachingDcMotorEx shooterL = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "shooterL")); // 6000 rpm
