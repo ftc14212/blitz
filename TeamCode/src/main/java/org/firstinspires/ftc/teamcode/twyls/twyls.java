@@ -67,7 +67,7 @@ public class twyls extends LinearOpMode {
     public static double turretOffset = 0;
     public static double turretOffsetAuto = 0;
     public static boolean turretOn = false;
-    public static double backSpin = 0;
+    public static double backSpin = -700;
     public static double shooterOffset = -18;
     @Override
     public void runOpMode() {
@@ -216,7 +216,7 @@ public class twyls extends LinearOpMode {
                 }
                 // controls
                 if (INTAKE) {
-                    indexerCpos = 0;
+                    indexerCpos = 0.5;
                     intake.setPower(1);
                     shooterVelo = backSpin;
                     // if ((!indexerOn && shooterR.getCurrent(CurrentUnit.MILLIAMPS) <= shooterT) || !beams.getState()) indexerCpos = 0;
@@ -246,7 +246,8 @@ public class twyls extends LinearOpMode {
                                     target
                             )
                     ) : 0;
-                    shooterVelo = getShooterVelo(distShooter);
+                    // shooterVelo = getShooterVelo(distShooter);
+                    shooterVelo = 1600;
                     hoodCpos = getHoodCpos(distShooter);
                     indexerOn = true;
                 } else if (RESET_SHOOTER_TURRET) {
