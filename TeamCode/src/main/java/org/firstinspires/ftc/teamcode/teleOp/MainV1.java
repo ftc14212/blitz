@@ -34,7 +34,6 @@ import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.MultipleTelemetry;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
-import org.firstinspires.ftc.teamcode.utils.Variables;
 import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
@@ -64,6 +63,7 @@ public class MainV1 extends OpMode {
     private boolean tReset2 = false;
     public static boolean shooterOn = true;
     public static int shooterT = 3500;
+    public double turretCpos;
     // timers
     ElapsedTime loopTime;
     ElapsedTime tResetT;
@@ -172,6 +172,8 @@ public class MainV1 extends OpMode {
         pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
         pinpoint.recalibrateIMU();
+        if (MainV1E.lastTurretPos != -999) turretCpos = MainV1E.lastTurretPos;
+        MainV1E.lastTurretPos = -999;
         // misc
         loopTime = new ElapsedTime();
         tResetT = new ElapsedTime();
@@ -185,7 +187,7 @@ public class MainV1 extends OpMode {
     public void onPromptsComplete() {
         alliance = prompter.get("alliance");
         startPos = prompter.get("start_pos");
-        if (Variables.lastAutoPos == null) {
+        if (MainV1E.lastAutoPos == null) {
             if (startPos == MainV1E.StartPos.FAR) {
                 if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(87.5, 8.3, Math.toRadians(90)));
                 if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(new Pose(56.5, 8.3, Math.toRadians(90)));
@@ -194,8 +196,10 @@ public class MainV1 extends OpMode {
                 if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(126, 8.3, Math.PI - Math.toRadians(144)));
                 if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(new Pose(18, 119, Math.toRadians(144)));
             }
-        } else follower.setStartingPose(new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
-        Variables.lastAutoPos = null;
+        } else follower.setStartingPose(new Pose(MainV1E.lastAutoPos.getX(), MainV1E.lastAutoPos.getY(), MainV1E.lastAutoPos.getHeading()));
+        if (alliance == MainV1E.Alliance.RED) redSide = true;
+        else redSide = false;
+        MainV1E.lastAutoPos = null;
         telemetryM.addLine("BLITZ Team 14212!");
         telemetryM.addLine(true, "INIT DONE!");
         telemetryM.addData(true, "Alliance", alliance);
@@ -215,7 +219,7 @@ public class MainV1 extends OpMode {
 
     @Override
     public void loop() {
-// poses
+        // poses
         Pose bluePos = new Pose(11, 137, Math.toRadians(blueShooter));
         Pose redPos = new Pose(133, 137, Math.toRadians(redShooter));
         Pose target = redSide ? redPos : bluePos;
@@ -224,10 +228,10 @@ public class MainV1 extends OpMode {
         turretPID.setPID(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
         shooterL.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
         shooterR.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
-        double turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+        turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
         double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
         double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
-        double headingOffset = Variables.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(Variables.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
+        double headingOffset = MainV1E.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(MainV1E.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
         double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
         distShooter += shooterOffset;
         // status
@@ -297,8 +301,14 @@ public class MainV1 extends OpMode {
             intake.setPower(1);
         }
         if (ALIGN_SHOOT) {
-            if (shooterR.getVelocity() >= shooterVelo - 20 && shooterR.getVelocity() <= shooterVelo + 20) ledCpos = 1;
-            else ledCpos = 0.388;
+            if (shooterR.getVelocity() >= shooterVelo - 100) {
+                gamepad1.rumble(0.8, 0.8, 1000);
+                ledCpos = 1;
+            }
+            else {
+                gamepad1.rumble(0, 0, 100);
+                ledCpos = 0.388;
+            }
             turretTpos = turretOn ? wrap(
                     alignTurret(
                             follower.getPose().getX(),

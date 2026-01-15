@@ -28,7 +28,7 @@ import org.firstinspires.ftc.teamcode.utils.CombinedServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.MultipleTelemetry;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
-import org.firstinspires.ftc.teamcode.utils.Variables;
+import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
@@ -126,12 +126,12 @@ public class twyls extends LinearOpMode {
         LynxUtils.setLynxColor(255, 0, 255);
         // starting pos
         hood.setPosition(hoodCpos = 0);
-        follower.setStartingPose(Variables.lastAutoPos == null ? redSide ? new Pose(87.5, 8.3, Math.toRadians(90)) : new Pose(56.5, 8.3, Math.toRadians(90)) : new Pose(Variables.lastAutoPos.getX(), Variables.lastAutoPos.getY(), Variables.lastAutoPos.getHeading()));
-        if (Variables.lastAutoPos != null) {
+        follower.setStartingPose(MainV1E.lastAutoPos == null ? redSide ? new Pose(87.5, 8.3, Math.toRadians(90)) : new Pose(56.5, 8.3, Math.toRadians(90)) : new Pose(MainV1E.lastAutoPos.getX(), MainV1E.lastAutoPos.getY(), MainV1E.lastAutoPos.getHeading()));
+        if (MainV1E.lastAutoPos != null) {
             if (redSide) turretOffset -= turretOffsetAuto;
             else turretOffset += turretOffsetAuto;
         }
-        Variables.lastAutoPos = null;
+        MainV1E.lastAutoPos = null;
         // misc
         loopTime = new ElapsedTime();
         tResetT = new ElapsedTime();
@@ -171,7 +171,7 @@ public class twyls extends LinearOpMode {
                 double turretCpos = (indexer.getCurrentPosition() / (PIDTuneTurretTwyls.TPR * PIDTuneTurretTwyls.ratio)) * 360;
                 double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
                 double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
-                double headingOffset = Variables.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(Variables.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
+                double headingOffset = MainV1E.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(MainV1E.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
                 double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
                 distShooter += shooterOffset;
                 // status

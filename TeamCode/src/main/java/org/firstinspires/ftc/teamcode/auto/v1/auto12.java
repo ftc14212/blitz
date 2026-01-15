@@ -9,7 +9,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -25,7 +25,7 @@ import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
-import org.firstinspires.ftc.teamcode.utils.Variables;
+import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
 import dev.frozenmilk.dairy.cachinghardware.CachingCRServo;
 import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
@@ -110,6 +110,7 @@ public class auto12 extends OpMode {
     boolean intake3Started = false;
     boolean shootClose2Started = false;
     boolean parkStarted = false;
+    public double turretCpos;
 
     public void buildPaths() {
         intake1 = follower.pathBuilder()
@@ -540,7 +541,7 @@ public class auto12 extends OpMode {
         Pose bluePos = new Pose(114.9, 24.7, Math.toRadians(blueShooter));
         Pose redPos = new Pose(124.9, -62, Math.toRadians(redShooter));
         target = redSide ? redPos : bluePos;
-        double turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
+        turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
         double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
         double turretOffset = (Math.toDegrees(follower.getHeading()) - Math.toDegrees(target.getHeading())) + turretOffsetXY;
         distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
@@ -627,6 +628,7 @@ public class auto12 extends OpMode {
      **/
     @Override
     public void stop() {
-        Variables.lastAutoPos = follower.getPose();
+        MainV1E.lastAutoPos = follower.getPose();
+        MainV1E.lastTurretPos = turretCpos;
     }
 }

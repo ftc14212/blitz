@@ -20,9 +20,9 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 @Configurable()
 @Autonomous(name = "Position tracking odometry", group = "tools_ftc14212")
 public class posTracking extends OpMode {
-    public static double startPosX = 56.5;
-    public static double startPosY = 8.3;
-    public static double startPosRotation = 180;
+    public static double startPosX = 18;
+    public static double startPosY = 119;
+    public static double startPosRotation = 144;
     private final Pose startPos = new Pose(startPosX, startPosY, Math.toRadians(startPosRotation)); // start Pos
     private Follower follower;
     static TelemetryManager telemetryM;

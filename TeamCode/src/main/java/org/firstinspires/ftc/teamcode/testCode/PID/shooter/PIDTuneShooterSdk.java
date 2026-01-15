@@ -23,7 +23,7 @@ public class PIDTuneShooterSdk extends OpMode {
     public static double P = 100;
     public static double I = 0;
     public static double D = 0;
-    public static double F = 30;
+    public static double F = 20;
     public static double TARGET = 0;
     TelemetryM telemetryM;
     /**
