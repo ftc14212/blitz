@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.auto.v1;
 
-import com.seattlesolvers.solverslib.controller.PIDController;
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierCurve;
@@ -17,8 +16,11 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.seattlesolvers.solverslib.controller.PIDController;
 import com.seattlesolvers.solverslib.util.InterpLUT;
 import com.skeletonarmy.marrow.TimerEx;
+import com.skeletonarmy.marrow.prompts.OptionPrompt;
+import com.skeletonarmy.marrow.prompts.Prompter;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -92,51 +94,278 @@ public class auton extends OpMode {
     public static double gateY = 59;
     public static double gateR = 140;
     DigitalChannel beams;
+    private final Prompter prompter = new Prompter(this);
+    private MainV1E.Alliance alliance = MainV1E.Alliance.RED;
+    private MainV1E.StartPos startPos = MainV1E.StartPos.FAR;
     TimerEx matchTime = new TimerEx(30); // 30 second autonomous
     private int pathState;
-    public static final Pose startPose = new Pose(18, 119, Math.toRadians(144));
-    public static final Pose shootClosePose = new Pose(55.88, 84.65, Math.toRadians(180));
-    public static final Pose intakeMidPose = new Pose(19, 57, Math.toRadians(180));
-    public static final Pose intakeMidControlPose = new Pose(62, 57, Math.toRadians(180));
-    public static final Pose intakeGatePose = new Pose(gateX, gateY, Math.toRadians(gateR));
-    public static final Pose intakeGateControlPose = new Pose(50.8, 69.6, Math.toRadians(0));
-    public static final Pose parkPose = new Pose(26, 69.6, Math.toRadians(-90));
-    private PathChain scoreClose, intakeMid, intakeGate, park;
-    /* preload lines */
+    // close
+    private PathChain scoreClose, intakeClose, intakeMid, intakeFar, intakeGate, park;
+    // blue close
+    public static final Pose startPoseBC = new Pose(18, 119, Math.toRadians(144));
+    public static final Pose shootClosePoseBC = new Pose(55.88, 84.65, Math.toRadians(180));
+    public static final Pose intakeClosePoseBC = new Pose(25, 82, Math.toRadians(180));
+    public static final Pose intakeMidPoseBC = new Pose(19, 57, Math.toRadians(180));
+    public static final Pose intakeMidControlPoseBC = new Pose(62, 57, Math.toRadians(180));
+    public static final Pose intakeFarPoseBC = new Pose(19.5, 34, Math.toRadians(180));
+    public static final Pose intakeGatePoseBC = new Pose(gateX, gateY, Math.toRadians(gateR));
+    public static final Pose intakeGateControlPoseBC = new Pose(50.8, 69.6, Math.toRadians(0));
+    public static final Pose parkPoseBC = new Pose(26, 69.6, Math.toRadians(-90));
+    // red close
+    public static final Pose startPoseRC = startPoseBC.mirror();
+    public static final Pose shootClosePoseRC = shootClosePoseBC.mirror();
+    public static final Pose intakeClosePoseRC = intakeClosePoseBC.mirror();
+    public static final Pose intakeMidPoseRC = intakeMidPoseBC.mirror();
+    public static final Pose intakeMidControlPoseRC = intakeMidControlPoseBC.mirror();
+    public static final Pose intakeFarPoseRC = intakeFarPoseBC.mirror();
+    public static final Pose intakeGatePoseRC = intakeGatePoseBC.mirror();
+    public static final Pose intakeGateControlPoseRC = intakeGateControlPoseBC.mirror();
+    public static final Pose parkPoseRC = parkPoseBC.mirror();
+    // far
+    private PathChain intake1, scoreFar1, grabBalls, scoreFar2, intake2, lever, scoreClose1, intake3, scoreClose2;
+    // blue far
+    public static final Pose startPoseBF = new Pose(56.5, 8.39, Math.toRadians(180));
+    public static final Pose intakeStart1PoseBF = new Pose(46, 31, Math.toRadians(180));
+    public static final Pose intakeEnd1PoseBF = new Pose(19.5, 34, Math.toRadians(180));
+    public static final Pose shootFarPoseBF = new Pose(55.5, 13.36, Math.toRadians(180));
+    public static final Pose grabBallsStartBF = new Pose(10, 44, Math.toRadians(-90));
+    public static final Pose grabBallsEndBF = new Pose(7.7, 30, Math.toRadians(-90));
+    public static final Pose intakeStart2PoseBF = new Pose(48.5, 51.5, Math.toRadians(180));
+    public static final Pose intakeEnd2PoseBF = new Pose(19, 57, Math.toRadians(180));
+    public static final Pose leverEndBF = new Pose(20.7, 69.2, Math.toRadians(180));
+    public static final Pose leverControlBF = new Pose(38.7, 61.6, Math.toRadians(180));
+    public static final Pose shootClosePoseBF = new Pose(55.88, 84.65, Math.toRadians(180));
+    public static final Pose shootCloseControlBF = new Pose(51.37, 63.54, Math.toRadians(180));
+    public static final Pose intakeEnd3PoseBF = new Pose(25, 82, Math.toRadians(180));
+    public static final Pose parkPoseBF = new Pose(51, 73.5, Math.toRadians(180));
+    // red far
+    public static final Pose startPoseRF = startPoseBF.mirror();
+    public static final Pose intakeStart1PoseRF = intakeStart1PoseBF.mirror();
+    public static final Pose intakeEnd1PoseRF = intakeEnd1PoseBF.mirror();
+    public static final Pose shootFarPoseRF = shootFarPoseBF.mirror();
+    public static final Pose grabBallsStartRF = grabBallsStartBF.mirror();
+    public static final Pose grabBallsEndRF = grabBallsEndBF.mirror();
+    public static final Pose intakeStart2PoseRF = intakeStart2PoseBF.mirror();
+    public static final Pose intakeEnd2PoseRF = intakeEnd2PoseBF.mirror();
+    public static final Pose leverEndRF = leverEndBF.mirror();
+    public static final Pose leverControlRF = leverControlBF.mirror();
+    public static final Pose shootClosePoseRF = shootClosePoseBF.mirror();
+    public static final Pose shootCloseControlRF = shootCloseControlBF.mirror();
+    public static final Pose intakeEnd3PoseRF = intakeEnd3PoseBF.mirror();
+    public static final Pose parkPoseRF = parkPoseBF.mirror();
+    /* preload lines close */
     boolean shootCloseStarted = false;
-    boolean intakeMidStarted = false;
-    boolean intakeGateStarted = false;
     boolean intakeCloseStarted = false;
-    boolean parkStarted = false;
-    boolean intakedMid = false;
+    boolean intakeMidStarted = false;
+    boolean intakeFarStarted = false;
+    boolean intakeGateStarted = false;
     boolean intakedClose = false;
+    boolean intakedMid = false;
+    boolean intakedFar = false;
     boolean shoot = false;
-    boolean firstShoot = true;
+    boolean shotFirst = false;
+    /* preload lines far */
+    boolean intake1Started = false;
+    boolean shootFar1Started = false;
+    boolean grabBallsStarted = false;
+    boolean shootFar2Started = false;
+    boolean intake2Started = false;
+    boolean leverStarted = false;
+    boolean scoreClose1Started = false;
+    boolean intake3Started = false;
+    boolean shootClose2Started = false;
 
     public void buildPaths() {
+        if (startPos == MainV1E.StartPos.CLOSE) {
+            if (alliance == MainV1E.Alliance.BLUE) buildBlueClose();
+            if (alliance == MainV1E.Alliance.RED) buildRedClose();
+        }
+        if (startPos == MainV1E.StartPos.FAR) {
+            if (alliance == MainV1E.Alliance.BLUE) buildBlueFar();
+            if (alliance == MainV1E.Alliance.RED) buildRedFar();
+        }
+    }
+
+    private void buildBlueClose() {
         scoreClose = follower.pathBuilder()
-                .addPath(new BezierLine(follower.getPose(), shootClosePose))
-                .setConstantHeadingInterpolation(shootClosePose.getHeading())
+                .addPath(new BezierLine(follower.getPose(), shootClosePoseBC))
+                .setConstantHeadingInterpolation(shootClosePoseBC.getHeading())
+                .build();
+        intakeClose = follower.pathBuilder()
+                .addPath(new BezierLine(follower.getPose(), intakeClosePoseBC))
+                .setConstantHeadingInterpolation(intakeClosePoseBC.getHeading())
                 .build();
         intakeMid = follower.pathBuilder()
                 .addPath(new BezierCurve(
                         follower.getPose(),
-                        intakeMidControlPose,
-                        intakeMidPose
+                        intakeMidControlPoseBC,
+                        intakeMidPoseBC
                 ))
-                .setConstantHeadingInterpolation(intakeMidPose.getHeading())
+                .setConstantHeadingInterpolation(intakeMidPoseBC.getHeading())
+                .build();
+        intakeFar = follower.pathBuilder()
+                .addPath(new BezierLine(follower.getPose(), intakeFarPoseBC))
+                .setConstantHeadingInterpolation(intakeFarPoseBC.getHeading())
                 .build();
         intakeGate = follower.pathBuilder()
                 .addPath(new BezierCurve(
                         follower.getPose(),
-                        intakeGateControlPose,
-                        intakeGatePose
+                        intakeGateControlPoseBC,
+                        intakeGatePoseBC
                 ))
-                .setConstantHeadingInterpolation(intakeGatePose.getHeading())
+                .setConstantHeadingInterpolation(intakeGatePoseBC.getHeading())
                 .build();
         park = follower.pathBuilder()
-                .addPath(new BezierLine(follower.getPose(), parkPose))
-                .setConstantHeadingInterpolation(parkPose.getHeading())
+                .addPath(new BezierLine(follower.getPose(), parkPoseBC))
+                .setConstantHeadingInterpolation(parkPoseBC.getHeading())
+                .build();
+    }
+    private void buildRedClose() {
+        scoreClose = follower.pathBuilder()
+                .addPath(new BezierLine(follower.getPose(), shootClosePoseRC))
+                .setConstantHeadingInterpolation(shootClosePoseRC.getHeading())
+                .build();
+        intakeClose = follower.pathBuilder()
+                .addPath(new BezierLine(follower.getPose(), intakeClosePoseRC))
+                .setConstantHeadingInterpolation(intakeClosePoseRC.getHeading())
+                .build();
+        intakeMid = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        follower.getPose(),
+                        intakeMidControlPoseRC,
+                        intakeMidPoseRC
+                ))
+                .setConstantHeadingInterpolation(intakeMidPoseRC.getHeading())
+                .build();
+        intakeFar = follower.pathBuilder()
+                .addPath(new BezierLine(follower.getPose(), intakeFarPoseRC))
+                .setConstantHeadingInterpolation(intakeFarPoseRC.getHeading())
+                .build();
+        intakeGate = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        follower.getPose(),
+                        intakeGateControlPoseRC,
+                        intakeGatePoseRC
+                ))
+                .setConstantHeadingInterpolation(intakeGatePoseRC.getHeading())
+                .build();
+        park = follower.pathBuilder()
+                .addPath(new BezierLine(follower.getPose(), parkPoseRC))
+                .setConstantHeadingInterpolation(parkPoseRC.getHeading())
+                .build();
+    }
+    private void buildBlueFar() {
+        intake1 = follower.pathBuilder()
+                .addPath(new BezierLine(startPoseBF, intakeStart1PoseBF))
+                .setConstantHeadingInterpolation(intakeStart1PoseBF.getHeading())
+                .addPath(new BezierLine(intakeStart1PoseBF, intakeEnd1PoseBF))
+                .setConstantHeadingInterpolation(intakeEnd1PoseBF.getHeading())
+                .build();
+        scoreFar1 = follower.pathBuilder()
+                .addPath(new BezierLine(intakeEnd1PoseBF, shootFarPoseBF))
+                .setConstantHeadingInterpolation(shootFarPoseBF.getHeading())
+                .build();
+        grabBalls = follower.pathBuilder()
+                .addPath(new BezierLine(shootFarPoseBF, grabBallsStartBF))
+                .setConstantHeadingInterpolation(grabBallsStartBF.getHeading())
+                .addPath(new BezierLine(grabBallsStartBF, grabBallsEndBF))
+                .setConstantHeadingInterpolation(grabBallsEndBF.getHeading())
+                .build();
+        scoreFar2 = follower.pathBuilder()
+                .addPath(new BezierLine(grabBallsEndBF, shootFarPoseBF))
+                .setConstantHeadingInterpolation(shootFarPoseBF.getHeading())
+                .build();
+        intake2 = follower.pathBuilder()
+                // .addPath(new BezierLine(shootFarPose, intakeStart2Pose))
+                .addPath(new BezierLine(shootFarPoseBF, intakeStart2PoseBF))
+                .setConstantHeadingInterpolation(intakeStart2PoseBF.getHeading())
+                .addPath(new BezierLine(intakeStart2PoseBF, intakeEnd2PoseBF))
+                .setConstantHeadingInterpolation(intakeEnd2PoseBF.getHeading())
+                .build();
+        lever = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        intakeEnd2PoseBF,
+                        leverControlBF,
+                        leverEndBF
+                ))
+                .setConstantHeadingInterpolation(leverEndBF.getHeading())
+                .build();
+        scoreClose1 = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        leverEndBF,
+                        shootCloseControlBF,
+                        shootClosePoseBF
+                ))
+                .setConstantHeadingInterpolation(shootClosePoseBF.getHeading())
+                .build();
+        intake3 = follower.pathBuilder()
+                .addPath(new BezierLine(shootClosePoseBF, intakeEnd3PoseBF))
+                .setConstantHeadingInterpolation(intakeEnd3PoseBF.getHeading())
+                .build();
+        scoreClose2 = follower.pathBuilder()
+                .addPath(new BezierLine(intakeEnd3PoseBF, shootClosePoseBF))
+                .setConstantHeadingInterpolation(shootClosePoseBF.getHeading())
+                .build();
+        park = follower.pathBuilder()
+                .addPath(new BezierLine(shootClosePoseBF, parkPoseBF))
+                .setConstantHeadingInterpolation(parkPoseBF.getHeading())
+                .build();
+    }
+    private void buildRedFar() {
+        intake1 = follower.pathBuilder()
+                .addPath(new BezierLine(startPoseRF, intakeStart1PoseRF))
+                .setConstantHeadingInterpolation(intakeStart1PoseRF.getHeading())
+                .addPath(new BezierLine(intakeStart1PoseRF, intakeEnd1PoseRF))
+                .setConstantHeadingInterpolation(intakeEnd1PoseRF.getHeading())
+                .build();
+        scoreFar1 = follower.pathBuilder()
+                .addPath(new BezierLine(intakeEnd1PoseRF, shootFarPoseRF))
+                .setConstantHeadingInterpolation(shootFarPoseRF.getHeading())
+                .build();
+        grabBalls = follower.pathBuilder()
+                .addPath(new BezierLine(shootFarPoseRF, grabBallsStartRF))
+                .setConstantHeadingInterpolation(grabBallsStartRF.getHeading())
+                .addPath(new BezierLine(grabBallsStartRF, grabBallsEndRF))
+                .setConstantHeadingInterpolation(grabBallsEndRF.getHeading())
+                .build();
+        scoreFar2 = follower.pathBuilder()
+                .addPath(new BezierLine(grabBallsEndRF, shootFarPoseRF))
+                .setConstantHeadingInterpolation(shootFarPoseRF.getHeading())
+                .build();
+        intake2 = follower.pathBuilder()
+                // .addPath(new BezierLine(shootFarPose, intakeStart2Pose))
+                .addPath(new BezierLine(shootFarPoseRF, intakeStart2PoseRF))
+                .setConstantHeadingInterpolation(intakeStart2PoseRF.getHeading())
+                .addPath(new BezierLine(intakeStart2PoseRF, intakeEnd2PoseRF))
+                .setConstantHeadingInterpolation(intakeEnd2PoseRF.getHeading())
+                .build();
+        lever = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        intakeEnd2PoseRF,
+                        leverControlRF,
+                        leverEndRF
+                ))
+                .setConstantHeadingInterpolation(leverEndRF.getHeading())
+                .build();
+        scoreClose1 = follower.pathBuilder()
+                .addPath(new BezierCurve(
+                        leverEndRF,
+                        shootCloseControlRF,
+                        shootClosePoseRF
+                ))
+                .setConstantHeadingInterpolation(shootClosePoseRF.getHeading())
+                .build();
+        intake3 = follower.pathBuilder()
+                .addPath(new BezierLine(shootClosePoseRF, intakeEnd3PoseRF))
+                .setConstantHeadingInterpolation(intakeEnd3PoseRF.getHeading())
+                .build();
+        scoreClose2 = follower.pathBuilder()
+                .addPath(new BezierLine(intakeEnd3PoseRF, shootClosePoseRF))
+                .setConstantHeadingInterpolation(shootClosePoseRF.getHeading())
+                .build();
+        park = follower.pathBuilder()
+                .addPath(new BezierLine(shootClosePoseRF, parkPoseRF))
+                .setConstantHeadingInterpolation(parkPoseRF.getHeading())
                 .build();
     }
 
@@ -145,6 +374,9 @@ public class auton extends OpMode {
      **/
     @Override
     public void init() {
+        prompter.prompt("alliance", new OptionPrompt<>("Select Alliance", MainV1E.Alliance.RED, MainV1E.Alliance.BLUE))
+                .prompt("start_pos", new OptionPrompt<>("Starting Position", MainV1E.StartPos.FAR, MainV1E.StartPos.CLOSE))
+                .onComplete(this::onPromptsComplete);
         telemetryM = new TelemetryM(telemetry, debugMode);
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -153,8 +385,6 @@ public class auton extends OpMode {
         timer = new ElapsedTime();
         opmodeTimer.resetTimer();
         follower = Constants.createFollower(hardwareMap);
-        buildPaths();
-        follower.setStartingPose(startPose);
         // hi
         shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
         turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P + turretPOffset), PIDTuneTurret.I, PIDTuneTurret.D);
@@ -194,11 +424,29 @@ public class auton extends OpMode {
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
         LynxUtils.setLynxColor(255, 0, 255);
-        // telemetry
-        telemetryM.addLine("BLITZ Team 14212!");
     }
 
-    public void autonomousPathUpdate() {
+    public void onPromptsComplete() {
+        alliance = prompter.get("alliance");
+        startPos = prompter.get("start_pos");
+        if (startPos == MainV1E.StartPos.FAR) {
+            if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(startPoseRF);
+            if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(startPoseBF);
+        }
+        if (startPos == MainV1E.StartPos.CLOSE) {
+            if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(startPoseRC);
+            if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(startPoseBC);
+        }
+        redSide = alliance == MainV1E.Alliance.RED;
+        buildPaths();
+        telemetryM.addLine("BLITZ Team 14212!");
+        telemetryM.addLine(true, "INIT DONE!");
+        telemetryM.addData(true, "Alliance", alliance);
+        telemetryM.addData(true, "Starting pos", startPos);
+        telemetryM.update();
+    }
+
+    public void closeStates() {
         switch (pathState) {
             case 0:
                 if (!shootCloseStarted) {
@@ -209,36 +457,57 @@ public class auton extends OpMode {
                 }
                 if (!follower.isBusy() && shootCloseStarted) {
                     if (shooterR.getVelocity() >= shooterVelo) {
-
                         if (!ran) {
                             timer.reset();
                             actionTimer.resetTimer();
                             ran = true;
                         }
-
-                        ledCpos = 1;
-
-                        if (firstShoot) {
+                        if (!shotFirst) {
                             if (timer.milliseconds() > firstShotDelay) {
-                                firstShoot = false; // delay only once ever
-                                FEED();             // FIRST SHOT
+                                FEED();
+                                shotFirst = true;
                             }
-                        } else {
-                            FEED();                 // EVERY SHOT AFTER = INSTANT
-                        }
+                        } else FEED();
+                        ledCpos = 1;
                     }
-
                     if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
                         RESET_SHOOTER_TURRET();
                         ran = false;
                         ran2 = false;
-                        if (!intakedMid) setPathState(1);
-                        else if (matchTime.isLessThan(3)) setPathState(4);
-                        else setPathState(2);
+                        shoot = false;
+                        if (!intakedClose) setPathState(1);
+                        else if (!intakedMid) setPathState(2);
+                        else if (!intakedFar) setPathState(3);
+                        else if (matchTime.isLessThan(4)) setPathState(5);
+                        else setPathState(4);
                     }
                 }
                 break;
             case 1:
+                if (!intakeCloseStarted) {
+                    speed = 1;
+                    indexerCpos = 1;
+                    INTAKE();
+                    follower.followPath(intakeClose, true);
+                    shootCloseStarted = false;
+                    intakedClose = true;
+                    intakeCloseStarted = true;
+                }
+                if (!follower.isBusy() && intakeCloseStarted) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(0);
+                    }
+                }
+                break;
+            case 2:
                 if (!intakeMidStarted) {
                     speed = 1;
                     indexerCpos = 1;
@@ -262,7 +531,31 @@ public class auton extends OpMode {
                     }
                 }
                 break;
-            case 2:
+            case 3:
+                if (!intakeFarStarted) {
+                    speed = 1;
+                    indexerCpos = 1;
+                    INTAKE();
+                    follower.followPath(intakeFar, true);
+                    shootCloseStarted = false;
+                    intakedFar = true;
+                    intakeFarStarted = true;
+                }
+                if (!follower.isBusy() && intakeFarStarted) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(0);
+                    }
+                }
+                break;
+            case 4:
                 if (!intakeGateStarted) {
                     speed = 1;
                     indexerCpos = 1;
@@ -285,7 +578,258 @@ public class auton extends OpMode {
                     }
                 }
                 break;
+            case 5:
+                if (!follower.isBusy()) {
+                    follower.followPath(park, true);
+                    setPathState(-1);
+                }
+                break;
+
+        }
+    }
+    
+    
+    public void farStates() {
+        switch (pathState) {
+            case 0:
+                if (!intake1Started) {
+                    shoot = true;
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        speed = 1;
+                        follower.followPath(intake1, true);
+                        intake1Started = true;
+                    }
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        INTAKE();
+                        speed = 1;
+                        follower.followPath(intake1, true);
+                        intake1Started = true;
+                    }
+                }
+                if (!follower.isBusy() && intake1Started) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(1);
+                    }
+                }
+                break;
+            case 1:
+                if (!shootFar1Started) {
+                    follower.followPath(scoreFar1, true);
+                    shootFar1Started = true;
+                }
+                if (!follower.isBusy() && shootFar1Started) {
+                    shoot = true;
+                    if (!ran2) {
+                        indexerCpos = -0.45;
+                        ran2 = true;
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(4);
+                    }
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(4);
+                    }
+                }
+                break;
+            case 2:
+                if (!grabBallsStarted) {
+                    speed = 0.7;
+                    INTAKE();
+                    follower.followPath(grabBalls, true);
+                    grabBallsStarted = true;
+                }
+                if (!follower.isBusy()) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(3);
+                    }
+                }
+                break;
+            case 3:
+                if (!shootFar2Started) {
+                    follower.followPath(scoreFar2, true);
+                    shootFar2Started = true;
+                }
+                if (!follower.isBusy() && shootFar2Started) {
+                    shoot = true;
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(4);
+                    }
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(4);
+                    }
+                }
+                break;
             case 4:
+                if (!intake2Started) {
+                    speed = 1;
+                    indexerCpos = 1;
+                    INTAKE();
+                    follower.followPath(intake2, true);
+                    intake2Started = true;
+                }
+                if (!follower.isBusy()) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(5);
+                    }
+                }
+                break;
+            case 5:
+                if (!leverStarted) {
+                    follower.followPath(lever, true);
+                    leverStarted = true;
+                }
+                if (!follower.isBusy()) {
+                    setPathState(6);
+                }
+                break;
+            case 6:
+                if (!scoreClose1Started) {
+                    follower.followPath(scoreClose1, true);
+                    scoreClose1Started = true;
+                }
+                if (!follower.isBusy() && scoreClose1Started) {
+                    shoot = true;
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(7);
+                    }
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(7);
+                    }
+                }
+                break;
+            case 7:
+                if (!intake3Started) {
+                    speed = 1;
+                    INTAKE();
+                    follower.followPath(intake3, true);
+                    intake3Started = true;
+                }
+                if (!follower.isBusy()) {
+                    if (!ran2) {
+                        timer.reset();
+                        ran2 = true;
+                    }
+                    if (timer.milliseconds() > intakeWait) {
+                        speed = 1;
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(8);
+                    }
+                }
+                break;
+            case 8:
+                if (!shootClose2Started) {
+                    follower.followPath(scoreClose2, true);
+                    shootClose2Started = true;
+                }
+                if (!follower.isBusy() && shootClose2Started) {
+                    shoot = true;
+                    if (shooterR.getVelocity() >= shooterVelo) {
+                        if (!ran) {
+                            actionTimer.resetTimer();
+                            ran = true;
+                        }
+                        ledCpos = 1;
+                        FEED();
+                    }
+                    if (!shooterOn) {
+                        RESET_SHOOTER_TURRET();
+                        OUTTAKE();
+                        ran = false;
+                        ran2 = false;
+                        setPathState(9);
+                    }
+                    if (actionTimer.getElapsedTime() >= shootWait && ledCpos == 1) {
+                        RESET_SHOOTER_TURRET();
+                        ran = false;
+                        ran2 = false;
+                        RESET_INTAKE();
+                        setPathState(9);
+                    }
+                }
+                break;
+            case 9:
                 if (!follower.isBusy()) {
                     follower.followPath(park, true);
                     setPathState(-1);
@@ -414,7 +958,8 @@ public class auton extends OpMode {
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         follower.setMaxPower(speed);
-        autonomousPathUpdate();
+        if (startPos == MainV1E.StartPos.FAR) farStates();
+        if (startPos == MainV1E.StartPos.CLOSE) closeStates();
         // servos
         pivot.setPosition(pivotCpos);
         hood.setPosition(hoodCpos);
@@ -487,6 +1032,7 @@ public class auton extends OpMode {
      **/
     @Override
     public void init_loop() {
+        prompter.run();
     }
 
     /**

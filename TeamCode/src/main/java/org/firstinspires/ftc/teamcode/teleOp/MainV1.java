@@ -78,9 +78,7 @@ public class MainV1 extends OpMode {
     public static double backSpin = 0;
     public static double shooterOffset = -18;
 
-    private Prompter prompter = new Prompter(this);
-    private MainV1E.Alliance alliance = MainV1E.Alliance.RED;
-    private MainV1E.StartPos startPos = MainV1E.StartPos.FAR;
+    private final Prompter prompter = new Prompter(this);
     boolean indexerOn = true;
     // hardware
     private TelemetryM telemetryM;
@@ -185,8 +183,8 @@ public class MainV1 extends OpMode {
     }
 
     public void onPromptsComplete() {
-        alliance = prompter.get("alliance");
-        startPos = prompter.get("start_pos");
+        MainV1E.Alliance alliance = prompter.get("alliance");
+        MainV1E.StartPos startPos = prompter.get("start_pos");
         if (MainV1E.lastAutoPos == null) {
             if (startPos == MainV1E.StartPos.FAR) {
                 if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(87.5, 8.3, Math.toRadians(90)));
