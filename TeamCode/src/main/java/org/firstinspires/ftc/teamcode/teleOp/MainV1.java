@@ -168,6 +168,8 @@ public class MainV1 extends OpMode {
         pivot.setPosition(pivotCpos = 0.45);
         led.setPosition(ledCpos = 0.611);
         pinpoint.recalibrateIMU();
+        if (MainV1E.lastAutoPos != null) follower.setStartingPose(new Pose(MainV1E.lastAutoPos.getX(), MainV1E.lastAutoPos.getY(), MainV1E.lastAutoPos.getHeading()));
+        MainV1E.lastAutoPos = null;
         if (MainV1E.lastTurretPos != -999) turretCpos = MainV1E.lastTurretPos;
         else indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         MainV1E.lastTurretPos = -999;
@@ -184,19 +186,15 @@ public class MainV1 extends OpMode {
     public void onPromptsComplete() {
         MainV1E.Alliance alliance = prompter.get("alliance");
         MainV1E.StartPos startPos = prompter.get("start_pos");
-        if (MainV1E.lastAutoPos == null) {
-            if (startPos == MainV1E.StartPos.FAR) {
-                if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(87.5, 8.3, Math.toRadians(90)));
-                if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(new Pose(56.5, 8.3, Math.toRadians(90)));
-            }
-            if (startPos == MainV1E.StartPos.CLOSE) {
-                if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(126, 8.3, Math.PI - Math.toRadians(144)));
-                if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(new Pose(18, 119, Math.toRadians(144)));
-            }
-        } else follower.setStartingPose(new Pose(MainV1E.lastAutoPos.getX(), MainV1E.lastAutoPos.getY(), MainV1E.lastAutoPos.getHeading()));
-        if (alliance == MainV1E.Alliance.RED) redSide = true;
-        else redSide = false;
-        MainV1E.lastAutoPos = null;
+        if (startPos == MainV1E.StartPos.FAR) {
+            if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(87.5, 8.3, Math.toRadians(90)));
+            if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(new Pose(56.5, 8.3, Math.toRadians(90)));
+        }
+        if (startPos == MainV1E.StartPos.CLOSE) {
+            if (alliance == MainV1E.Alliance.RED) follower.setStartingPose(new Pose(126, 8.3, Math.PI - Math.toRadians(144)));
+            if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(new Pose(18, 119, Math.toRadians(144)));
+        }
+        redSide = alliance == MainV1E.Alliance.RED;
         telemetryM.addLine("BLITZ Team 14212!");
         telemetryM.addLine(true, "INIT DONE!");
         telemetryM.addData(true, "Alliance", alliance);

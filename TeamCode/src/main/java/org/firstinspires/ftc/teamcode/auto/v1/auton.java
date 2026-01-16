@@ -25,6 +25,7 @@ import com.skeletonarmy.marrow.prompts.Prompter;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.teleOp.MainV1;
 import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooter;
 import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooterSdk;
 import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
@@ -78,7 +79,7 @@ public class auton extends OpMode {
     public static double redShooter = -49;
     public static boolean shooterOn = true;
     public static int intakeWait = 500;
-    public static int gateWait = 1000;
+    public static int gateWait = 2000;
     public static int shootWait = 1300;
     public static double turretPOffset = -0.0002;
     boolean ran2 = false;
@@ -86,16 +87,17 @@ public class auton extends OpMode {
     public double distShooter;
     boolean ran = false;
     public static boolean indexerOn = true;
-    public static int firstShotDelay = 1300;
+    public static int firstShotDelay = 600;
     private ElapsedTime tResetT;
     public static double speed = 1;
     public static boolean debugMode = true;
     public double turretCpos;
     public static double turretOffset = -10;
     public static boolean turretOn = true;
-    public static double gateX = 18;
-    public static double gateY = 59;
-    public static double gateR = 140;
+    public static double gateX = 11;
+    public static double gateY = 60;
+    public static double gateR = 145;
+    public static boolean skipToGate = false;
     DigitalChannel beams;
     private final Prompter prompter = new Prompter(this);
     private MainV1E.Alliance alliance = MainV1E.Alliance.RED;
@@ -107,23 +109,25 @@ public class auton extends OpMode {
     // blue close
     public static final Pose startPoseBC = new Pose(18, 119, Math.toRadians(144));
     public static final Pose shootClosePoseBC = new Pose(55.88, 84.65, Math.toRadians(180));
-    public static final Pose intakeClosePoseBC = new Pose(25, 82, Math.toRadians(180));
+    public static final Pose intakeClosePoseBC = new Pose(20, 79, Math.toRadians(180));
+    public static final Pose intakeCloseControlPoseBC = new Pose(50, 74, Math.toRadians(180));
     public static final Pose intakeMidPoseBC = new Pose(19, 57, Math.toRadians(180));
-    public static final Pose intakeMidControlPoseBC = new Pose(62, 57, Math.toRadians(180));
-    public static final Pose intakeFarPoseBC = new Pose(19.5, 34, Math.toRadians(180));
-    public static final Pose intakeFarControlPoseBC = new Pose(61, 27, Math.toRadians(180));
+    public static final Pose intakeMidControlPoseBC = new Pose(62, 52, Math.toRadians(180));
+    public static final Pose intakeFarPoseBC = new Pose(14.5, 34, Math.toRadians(180));
+    public static final Pose intakeFarControlPoseBC = new Pose(72, 24.6, Math.toRadians(180));
     public static final Pose intakeGatePoseBC = new Pose(gateX, gateY, Math.toRadians(gateR));
-    public static final Pose intakeGateControlPoseBC = new Pose(50.8, 69.6, Math.toRadians(0));
+    public static final Pose intakeGateControlPoseBC = new Pose(51, 60, Math.toRadians(0));
     public static final Pose parkPoseBC = new Pose(26, 69.6, Math.toRadians(-90));
     // red close
     public static final Pose startPoseRC = startPoseBC.mirror();
     public static final Pose shootClosePoseRC = shootClosePoseBC.mirror();
     public static final Pose intakeClosePoseRC = intakeClosePoseBC.mirror();
+    public static final Pose intakeCloseControlPoseRC = intakeCloseControlPoseBC.mirror();
     public static final Pose intakeMidPoseRC = intakeMidPoseBC.mirror();
     public static final Pose intakeMidControlPoseRC = intakeMidControlPoseBC.mirror();
     public static final Pose intakeFarPoseRC = intakeFarPoseBC.mirror();
     public static final Pose intakeFarControlPoseRC = intakeFarControlPoseBC.mirror();
-    public static final Pose intakeGatePoseRC = new Pose(144 - gateX, gateY, Math.toRadians(40));
+    public static final Pose intakeGatePoseRC = new Pose(144 - gateX, gateY, Math.toRadians(35));
     public static final Pose intakeGateControlPoseRC = intakeGateControlPoseBC.mirror();
     public static final Pose parkPoseRC = parkPoseBC.mirror();
     // far
@@ -167,6 +171,7 @@ public class auton extends OpMode {
     boolean intakedClose = false;
     boolean intakedMid = false;
     boolean intakedFar = false;
+    boolean intakedGate = false;
     boolean shoot = false;
     boolean shotFirst = false;
     /* preload lines far */
@@ -181,7 +186,7 @@ public class auton extends OpMode {
     boolean shootClose2Started = false;
     // idk
     boolean reached = false;
-
+    boolean shootFar = false;
     public void buildPaths() {
         if (startPos == MainV1E.StartPos.CLOSE) {
             if (alliance == MainV1E.Alliance.BLUE) buildBlueClose();
@@ -199,7 +204,11 @@ public class auton extends OpMode {
                 .setConstantHeadingInterpolation(shootClosePoseBC.getHeading())
                 .build();
         intakeClose = follower.pathBuilder()
-                .addPath(new BezierLine(follower.getPose(), intakeClosePoseBC))
+                .addPath(new BezierCurve(
+                        follower.getPose(),
+                        intakeCloseControlPoseBC,
+                        intakeClosePoseBC
+                ))
                 .setConstantHeadingInterpolation(intakeClosePoseBC.getHeading())
                 .build();
         intakeMid = follower.pathBuilder()
@@ -237,7 +246,11 @@ public class auton extends OpMode {
                 .setConstantHeadingInterpolation(shootClosePoseRC.getHeading())
                 .build();
         intakeClose = follower.pathBuilder()
-                .addPath(new BezierLine(follower.getPose(), intakeClosePoseRC))
+                .addPath(new BezierCurve(
+                        follower.getPose(),
+                        intakeCloseControlPoseRC,
+                        intakeClosePoseRC
+                ))
                 .setConstantHeadingInterpolation(intakeClosePoseRC.getHeading())
                 .build();
         intakeMid = follower.pathBuilder()
@@ -392,6 +405,7 @@ public class auton extends OpMode {
         prompter.prompt("alliance", new OptionPrompt<>("Select Alliance", MainV1E.Alliance.RED, MainV1E.Alliance.BLUE))
                 .prompt("start_pos", new OptionPrompt<>("Starting Position", MainV1E.StartPos.FAR, MainV1E.StartPos.CLOSE))
                 .onComplete(this::onPromptsComplete);
+        MainV1E.lastAutoPos = null;
         telemetryM = new TelemetryM(telemetry, debugMode);
         pathTimer = new Timer();
         opmodeTimer = new Timer();
@@ -455,6 +469,7 @@ public class auton extends OpMode {
             if (alliance == MainV1E.Alliance.BLUE) follower.setStartingPose(startPoseBC);
         }
         redSide = alliance == MainV1E.Alliance.RED;
+        MainV1.redSide = alliance == MainV1E.Alliance.RED;
         buildPaths();
         telemetryM.addLine("BLITZ Team 14212!");
         telemetryM.addLine(true, "INIT DONE!");
@@ -493,11 +508,12 @@ public class auton extends OpMode {
                         ran = false;
                         ran2 = false;
                         shoot = false;
-                        if (!intakedClose) setPathState(1);
+                        if (skipToGate) setPathState(4);
                         else if (!intakedMid) setPathState(2);
+                        else if (!intakedGate) setPathState(4);
+                        else if (!intakedClose) setPathState(1);
                         else if (!intakedFar) setPathState(3);
-                        else if (matchTime.isLessThan(4)) setPathState(5);
-                        else setPathState(4);
+                        else if (matchTime.isLessThan(3)) setPathState(5);
                     }
                 }
                 break;
@@ -510,8 +526,8 @@ public class auton extends OpMode {
                     intakedClose = true;
                     intakeCloseStarted = true;
                 }
-                if (alliance == MainV1E.Alliance.RED && !follower.isBusy() && (Math.abs(follower.getPose().getX() - intakeClosePoseRC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeClosePoseRC.getY()) < 2)) reached = true;
-                if (alliance == MainV1E.Alliance.BLUE && !follower.isBusy() && (Math.abs(follower.getPose().getX() - intakeClosePoseBC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeClosePoseBC.getY()) < 2)) reached = true;
+                if (alliance == MainV1E.Alliance.RED && follower.atPose(intakeClosePoseRC, 2, 2)) reached = true;
+                if (alliance == MainV1E.Alliance.BLUE && follower.atPose(intakeClosePoseBC, 2, 2)) reached = true;
                 if (reached) {
                     if (!ran2) {
                         timer.reset();
@@ -559,8 +575,8 @@ public class auton extends OpMode {
                     intakedFar = true;
                     intakeFarStarted = true;
                 }
-                if (alliance == MainV1E.Alliance.RED && !follower.isBusy() || (Math.abs(follower.getPose().getX() - intakeFarPoseRC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeFarPoseRC.getY()) < 2)) reached = true;
-                if (alliance == MainV1E.Alliance.BLUE && !follower.isBusy() || (Math.abs(follower.getPose().getX() - intakeFarPoseBC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeFarPoseBC.getY()) < 2)) reached = true;
+                if (alliance == MainV1E.Alliance.RED && follower.atPose(intakeFarPoseRC, 2, 2)) reached = true;
+                if (alliance == MainV1E.Alliance.BLUE && follower.atPose(intakeFarPoseBC, 2, 2)) reached = true;
                 if (reached) {
                     if (!ran2) {
                         timer.reset();
@@ -582,6 +598,7 @@ public class auton extends OpMode {
                     INTAKE();
                     follower.followPath(intakeGate, true);
                     shootCloseStarted = false;
+                    intakedGate = true;
                     intakeGateStarted = true;
                 }
                 if (!follower.isBusy()) {
@@ -614,8 +631,9 @@ public class auton extends OpMode {
         switch (pathState) {
             case 0:
                 if (!intake1Started) {
-                    shoot = true;
-                    if (shooterR.getVelocity() >= shooterVelo) {
+                    turretTpos = redSide ? 67 : -67;
+                    shootFar = true;
+                    if (shooterR.getVelocity() >= shooterVelo + 10) {
                         if (!ran) {
                             actionTimer.resetTimer();
                             ran = true;
@@ -658,6 +676,7 @@ public class auton extends OpMode {
                     shootFar1Started = true;
                 }
                 if (!follower.isBusy() && shootFar1Started) {
+                    turretTpos = redSide ? 68 : -68;
                     shoot = true;
                     if (!ran2) {
                         indexerCpos = -0.45;
@@ -670,7 +689,7 @@ public class auton extends OpMode {
                         ran2 = false;
                         setPathState(4);
                     }
-                    if (shooterR.getVelocity() >= shooterVelo) {
+                    if (shooterR.getVelocity() >= shooterVelo + 10) {
                         if (!ran) {
                             actionTimer.resetTimer();
                             ran = true;
@@ -713,8 +732,9 @@ public class auton extends OpMode {
                     shootFar2Started = true;
                 }
                 if (!follower.isBusy() && shootFar2Started) {
-                    shoot = true;
-                    if (shooterR.getVelocity() >= shooterVelo) {
+                    turretTpos = redSide ? 68 : -68;
+                    shootFar = true;
+                    if (shooterR.getVelocity() >= shooterVelo + 10) {
                         if (!ran) {
                             actionTimer.resetTimer();
                             ran = true;
@@ -774,8 +794,9 @@ public class auton extends OpMode {
                     scoreClose1Started = true;
                 }
                 if (!follower.isBusy() && scoreClose1Started) {
-                    shoot = true;
-                    if (shooterR.getVelocity() >= shooterVelo) {
+                    turretTpos = redSide ? 45 : -45;
+                    shootFar = true;
+                    if (shooterR.getVelocity() >= shooterVelo + 10) {
                         if (!ran) {
                             actionTimer.resetTimer();
                             ran = true;
@@ -825,8 +846,9 @@ public class auton extends OpMode {
                     shootClose2Started = true;
                 }
                 if (!follower.isBusy() && shootClose2Started) {
-                    shoot = true;
-                    if (shooterR.getVelocity() >= shooterVelo) {
+                    turretTpos = redSide ? 45 : -45;
+                    shootFar = true;
+                    if (shooterR.getVelocity() >= shooterVelo + 10) {
                         if (!ran) {
                             actionTimer.resetTimer();
                             ran = true;
@@ -1004,11 +1026,16 @@ public class auton extends OpMode {
             if (shooterOn) shooterVelo = getShooterVelo(distShooter);
             hoodCpos = getHoodCpos(distShooter);
         }
+        if (shootFar) {
+            if (shooterOn) shooterVelo = getShooterVelo(distShooter);
+            hoodCpos = getHoodCpos(distShooter);
+        }
         double error = turretTpos - turretCpos;
         double power = -turretPID.calculate(0, error) + PIDTuneTurret.F;
         power = Math.max(-1, Math.min(1, power));
         turret.setPower(power);
         follower.update();
+        MainV1E.lastAutoPos = follower.getPose();
         // telemetry
         telemetryM.addLine("Blitz Team 14212!");
         telemetryM.addData(true, "loop times", loopTime);
@@ -1075,7 +1102,7 @@ public class auton extends OpMode {
      **/
     @Override
     public void stop() {
-        MainV1E.lastAutoPos = follower.getPose();
+        MainV1E.lastAutoPos = follower.getPose(); // COMMENT THIS IF TELEOP AFTER AUTO NO WORKY
         MainV1E.lastTurretPos = turretCpos;
     }
 }
