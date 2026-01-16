@@ -107,7 +107,7 @@ public class MainV1 extends OpMode {
 
     @Override
     public void init() {
-        prompter.prompt("alliance", new OptionPrompt<>("Select Alliance", MainV1E.Alliance.RED, MainV1E.Alliance.BLUE))
+        if (MainV1E.lastAutoPos == null) prompter.prompt("alliance", new OptionPrompt<>("Select Alliance", MainV1E.Alliance.RED, MainV1E.Alliance.BLUE))
                 .prompt("start_pos", new OptionPrompt<>("Starting Position", MainV1E.StartPos.FAR, MainV1E.StartPos.CLOSE))
                 .onComplete(this::onPromptsComplete);
         // hardware
@@ -143,8 +143,6 @@ public class MainV1 extends OpMode {
         turret = new CombinedCRServo(turret1, turret2); // 2x axon maxs
         // limits
         pivot.scaleRange(0, 0.4);
-        // reset encoders
-        indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         // turn on motor
         shooterR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         shooterL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -171,6 +169,7 @@ public class MainV1 extends OpMode {
         led.setPosition(ledCpos = 0.611);
         pinpoint.recalibrateIMU();
         if (MainV1E.lastTurretPos != -999) turretCpos = MainV1E.lastTurretPos;
+        else indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         MainV1E.lastTurretPos = -999;
         // misc
         loopTime = new ElapsedTime();

@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.seattlesolvers.solverslib.controller.PIDController;
@@ -25,6 +26,7 @@ import com.skeletonarmy.marrow.prompts.Prompter;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooter;
+import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooterSdk;
 import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
@@ -41,6 +43,7 @@ public class auton extends OpMode {
     TelemetryM telemetryM;
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
+    ElapsedTime loopTime;
     private ElapsedTime timer;
     PIDController shooterPID;
     PIDController turretPID;
@@ -108,6 +111,7 @@ public class auton extends OpMode {
     public static final Pose intakeMidPoseBC = new Pose(19, 57, Math.toRadians(180));
     public static final Pose intakeMidControlPoseBC = new Pose(62, 57, Math.toRadians(180));
     public static final Pose intakeFarPoseBC = new Pose(19.5, 34, Math.toRadians(180));
+    public static final Pose intakeFarControlPoseBC = new Pose(61, 27, Math.toRadians(180));
     public static final Pose intakeGatePoseBC = new Pose(gateX, gateY, Math.toRadians(gateR));
     public static final Pose intakeGateControlPoseBC = new Pose(50.8, 69.6, Math.toRadians(0));
     public static final Pose parkPoseBC = new Pose(26, 69.6, Math.toRadians(-90));
@@ -118,7 +122,8 @@ public class auton extends OpMode {
     public static final Pose intakeMidPoseRC = intakeMidPoseBC.mirror();
     public static final Pose intakeMidControlPoseRC = intakeMidControlPoseBC.mirror();
     public static final Pose intakeFarPoseRC = intakeFarPoseBC.mirror();
-    public static final Pose intakeGatePoseRC = intakeGatePoseBC.mirror();
+    public static final Pose intakeFarControlPoseRC = intakeFarControlPoseBC.mirror();
+    public static final Pose intakeGatePoseRC = new Pose(144 - gateX, gateY, Math.toRadians(40));
     public static final Pose intakeGateControlPoseRC = intakeGateControlPoseBC.mirror();
     public static final Pose parkPoseRC = parkPoseBC.mirror();
     // far
@@ -174,6 +179,8 @@ public class auton extends OpMode {
     boolean scoreClose1Started = false;
     boolean intake3Started = false;
     boolean shootClose2Started = false;
+    // idk
+    boolean reached = false;
 
     public void buildPaths() {
         if (startPos == MainV1E.StartPos.CLOSE) {
@@ -204,7 +211,11 @@ public class auton extends OpMode {
                 .setConstantHeadingInterpolation(intakeMidPoseBC.getHeading())
                 .build();
         intakeFar = follower.pathBuilder()
-                .addPath(new BezierLine(follower.getPose(), intakeFarPoseBC))
+                .addPath(new BezierCurve(
+                        follower.getPose(),
+                        intakeFarControlPoseBC,
+                        intakeFarPoseBC
+                ))
                 .setConstantHeadingInterpolation(intakeFarPoseBC.getHeading())
                 .build();
         intakeGate = follower.pathBuilder()
@@ -238,7 +249,11 @@ public class auton extends OpMode {
                 .setConstantHeadingInterpolation(intakeMidPoseRC.getHeading())
                 .build();
         intakeFar = follower.pathBuilder()
-                .addPath(new BezierLine(follower.getPose(), intakeFarPoseRC))
+                .addPath(new BezierCurve(
+                        follower.getPose(),
+                        intakeFarControlPoseRC,
+                        intakeFarPoseRC
+                ))
                 .setConstantHeadingInterpolation(intakeFarPoseRC.getHeading())
                 .build();
         intakeGate = follower.pathBuilder()
@@ -384,6 +399,8 @@ public class auton extends OpMode {
         tResetT = new ElapsedTime();
         timer = new ElapsedTime();
         opmodeTimer.resetTimer();
+        loopTime = new ElapsedTime();
+        loopTime.reset();
         follower = Constants.createFollower(hardwareMap);
         // hi
         shooterPID = new PIDController(Math.sqrt(PIDTuneShooter.P), PIDTuneShooter.I, PIDTuneShooter.D);
@@ -451,6 +468,7 @@ public class auton extends OpMode {
             case 0:
                 if (!shootCloseStarted) {
                     shoot = true;
+                    reached = false;
                     intakeGateStarted = false;
                     follower.followPath(scoreClose, true);
                     shootCloseStarted = true;
@@ -486,14 +504,15 @@ public class auton extends OpMode {
             case 1:
                 if (!intakeCloseStarted) {
                     speed = 1;
-                    indexerCpos = 1;
                     INTAKE();
                     follower.followPath(intakeClose, true);
                     shootCloseStarted = false;
                     intakedClose = true;
                     intakeCloseStarted = true;
                 }
-                if (!follower.isBusy() && intakeCloseStarted) {
+                if (alliance == MainV1E.Alliance.RED && !follower.isBusy() && (Math.abs(follower.getPose().getX() - intakeClosePoseRC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeClosePoseRC.getY()) < 2)) reached = true;
+                if (alliance == MainV1E.Alliance.BLUE && !follower.isBusy() && (Math.abs(follower.getPose().getX() - intakeClosePoseBC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeClosePoseBC.getY()) < 2)) reached = true;
+                if (reached) {
                     if (!ran2) {
                         timer.reset();
                         ran2 = true;
@@ -514,7 +533,6 @@ public class auton extends OpMode {
                     INTAKE();
                     follower.followPath(intakeMid, true);
                     shootCloseStarted = false;
-                    intakedMid = true;
                     intakeMidStarted = true;
                 }
                 if (!follower.isBusy() && intakeMidStarted) {
@@ -527,6 +545,7 @@ public class auton extends OpMode {
                         ran = false;
                         ran2 = false;
                         RESET_INTAKE();
+                        intakedMid = true;
                         setPathState(0);
                     }
                 }
@@ -534,14 +553,15 @@ public class auton extends OpMode {
             case 3:
                 if (!intakeFarStarted) {
                     speed = 1;
-                    indexerCpos = 1;
                     INTAKE();
                     follower.followPath(intakeFar, true);
                     shootCloseStarted = false;
                     intakedFar = true;
                     intakeFarStarted = true;
                 }
-                if (!follower.isBusy() && intakeFarStarted) {
+                if (alliance == MainV1E.Alliance.RED && !follower.isBusy() || (Math.abs(follower.getPose().getX() - intakeFarPoseRC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeFarPoseRC.getY()) < 2)) reached = true;
+                if (alliance == MainV1E.Alliance.BLUE && !follower.isBusy() || (Math.abs(follower.getPose().getX() - intakeFarPoseBC.getX()) < 2 && Math.abs(follower.getPose().getY() - intakeFarPoseBC.getY()) < 2)) reached = true;
+                if (reached) {
                     if (!ran2) {
                         timer.reset();
                         ran2 = true;
@@ -577,6 +597,7 @@ public class auton extends OpMode {
                         setPathState(0);
                     }
                 }
+                if (matchTime.isLessThan(4)) setPathState(5);
                 break;
             case 5:
                 if (!follower.isBusy()) {
@@ -966,9 +987,10 @@ public class auton extends OpMode {
         indexer.setPower(indexerCpos);
         led.setPosition(ledCpos);
         // shooter code
-        double sPower = shooterOn ? shooterPID.calculate(shooterR.getVelocity(), shooterVelo) + shooterVelo : 0;
-        shooterR.setVelocity(sPower); // leader
-        shooterL.setVelocity(sPower); // follower
+        shooterL.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
+        shooterR.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
+        shooterR.setVelocity(shooterVelo); // leader
+        shooterL.setVelocity(shooterVelo); // follower
         // turret code
         if (shoot) {
             turretTpos = turretOn ? wrap(
@@ -979,7 +1001,7 @@ public class auton extends OpMode {
                             target
                     )
             ) : 0;
-            shooterVelo = getShooterVelo(distShooter);
+            if (shooterOn) shooterVelo = getShooterVelo(distShooter);
             hoodCpos = getHoodCpos(distShooter);
         }
         double error = turretTpos - turretCpos;
@@ -989,6 +1011,8 @@ public class auton extends OpMode {
         follower.update();
         // telemetry
         telemetryM.addLine("Blitz Team 14212!");
+        telemetryM.addData(true, "loop times", loopTime);
+        telemetryM.addData(true, "reached", reached);
         telemetryM.addData(true, "pivot", pivot.getPosition());
         telemetryM.addData(true, "hood", hood.getPosition());
         telemetryM.addData(true, "indexer", indexer.getPower());
