@@ -28,6 +28,7 @@ import com.skeletonarmy.marrow.prompts.Prompter;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.TurretSS;
 import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooterSdk;
 import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
@@ -172,6 +173,7 @@ public class MainV1 extends OpMode {
         MainV1E.lastAutoPos = null;
         if (MainV1E.lastTurretPos != -999) turretCpos = MainV1E.lastTurretPos;
         else indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        indexer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MainV1E.lastTurretPos = -999;
         // misc
         loopTime = new ElapsedTime();
@@ -224,9 +226,6 @@ public class MainV1 extends OpMode {
         shooterL.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
         shooterR.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F));
         turretCpos = (-indexer.getCurrentPosition() / (PIDTuneTurret.TPR * PIDTuneTurret.ratio)) * 360;
-        double turretOffsetXY = Math.atan(target.getY()/follower.getPose().getX());
-        double turretOffset = (Math.toDegrees(follower.getHeading()) - (redSide ? Math.toDegrees(redPos.getHeading()) : Math.toDegrees(bluePos.getHeading()))) + turretOffsetXY;
-        double headingOffset = MainV1E.lastAutoPos == null ? 90 - Math.toDegrees(follower.getHeading()) : Math.toDegrees(MainV1E.lastAutoPos.getHeading() - follower.getHeading()); // if auto flips up teleOp this is why
         double distShooter = redSide ? Math.sqrt(Math.pow((redPos.getX() - follower.getPose().getX()), 2) + Math.pow((redPos.getY() - follower.getPose().getY()), 2)) : Math.sqrt(Math.pow((bluePos.getX() - follower.getPose().getX()), 2) + Math.pow((bluePos.getY() - follower.getPose().getY()), 2));
         distShooter += shooterOffset;
         // status
@@ -353,8 +352,6 @@ public class MainV1 extends OpMode {
         telemetryM.addData(true, "tReset", tReset);
         telemetryM.addData(true, "tReset2", tReset2);
         telemetryM.addData(true, "turret error", Math.abs(turretTpos - turretCpos));
-        telemetryM.addData(true, "heading diff", headingOffset);
-        telemetryM.addData(true, "heading diff sqrt", headingOffset < 0 ? -Math.sqrt(Math.abs(headingOffset)) : Math.sqrt(headingOffset));
         telemetryM.addData(true, "PIDF", "P: " + PIDTuneTurret.P + " I: " + PIDTuneTurret.I + " D: " + PIDTuneTurret.D + " F: " + PIDTuneTurret.F);
         telemetryM.addData(true, "turretTpos", turretTpos);
         telemetryM.addData(true, "shooterR Current", shooterR.getCurrent(CurrentUnit.MILLIAMPS));
@@ -373,7 +370,6 @@ public class MainV1 extends OpMode {
         telemetryM.addData(true, "\nbluePos:\nX:", bluePos.getX());
         telemetryM.addData(true, "Y:", bluePos.getY());
         telemetryM.addData(true, "heading:", Math.toDegrees(bluePos.getHeading()));
-        telemetryM.addData(true, "\nturret offset XY", turretOffsetXY);
         telemetryM.addData(true, "alignTurret", alignTurret(follower.getPose().getX(), follower.getPose().getY(), follower.getHeading(), target));
         telemetryM.addData(true, "beam breaks", !beams.getState());
         telemetryM.update();

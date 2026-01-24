@@ -25,7 +25,7 @@ public class PIDTuneTurret extends OpMode {
     public static double D = 0.0002;
     public static double F = 0.02;
     public static double TARGET = 0;
-    public static double TPR = 4000; // ticks per revolution
+    public static int TPR = 4000; // ticks per revolution
     public static double ratio = (double) 92 / 53;
     /**
      * Initialization code.

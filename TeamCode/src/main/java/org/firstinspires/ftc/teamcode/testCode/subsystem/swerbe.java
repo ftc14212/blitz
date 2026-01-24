@@ -5,7 +5,7 @@
  * started coding at 12/2/25  @  7:15 pm
  * finished coding at 12/2/25  @  11:27 pm
 ***/
-package org.firstinspires.ftc.teamcode.teleOp;
+package org.firstinspires.ftc.teamcode.testCode.subsystem;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.gamepad.PanelsGamepad;
