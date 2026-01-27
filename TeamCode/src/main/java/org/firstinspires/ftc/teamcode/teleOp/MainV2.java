@@ -1,39 +1,44 @@
 /***
- * MAIN V1
+ * MAIN V2
  * @author David Grieas - 14212 MetroBotics
- * coding for qualifier 2 - dec 6th
- * started coding at 11/1/25  @  6:15 pm
+ * coding for our V2 Phantom - feb 28th
+ * started coding at 1/26/25  @  11:54 am
 ***/
 package org.firstinspires.ftc.teamcode.teleOp;
 
-import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.seattlesolvers.solverslib.controller.PIDController;
-import com.seattlesolvers.solverslib.util.InterpLUT;
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.seattlesolvers.solverslib.controller.PIDController;
+import com.seattlesolvers.solverslib.util.InterpLUT;
 import com.skeletonarmy.marrow.prompts.OptionPrompt;
 import com.skeletonarmy.marrow.prompts.Prompter;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.ShooterSS;
 import org.firstinspires.ftc.teamcode.subsystems.TurretSS;
 import org.firstinspires.ftc.teamcode.testCode.PID.shooter.PIDTuneShooterSdk;
 import org.firstinspires.ftc.teamcode.testCode.PID.turret.PIDTuneTurret;
 import org.firstinspires.ftc.teamcode.utils.CombinedCRServo;
+import org.firstinspires.ftc.teamcode.utils.CombinedServo;
 import org.firstinspires.ftc.teamcode.utils.LynxUtils;
 import org.firstinspires.ftc.teamcode.utils.MultipleTelemetry;
+import org.firstinspires.ftc.teamcode.utils.Prism.Color;
+import org.firstinspires.ftc.teamcode.utils.Prism.GoBildaPrismDriver;
+import org.firstinspires.ftc.teamcode.utils.Prism.PrismAnimations;
 import org.firstinspires.ftc.teamcode.utils.TelemetryM;
 import org.firstinspires.ftc.teamcode.vars.MainV1E;
 
@@ -42,50 +47,41 @@ import dev.frozenmilk.dairy.cachinghardware.CachingDcMotorEx;
 import dev.frozenmilk.dairy.cachinghardware.CachingServo;
 
 @Configurable
-@TeleOp(name="Main v1", group=".ftc14212")
-public class MainV1 extends OpMode {
+@TeleOp(name="Main v2", group=".ftc14212")
+public class MainV2 extends OpMode {
     /**
-     * MAIN V1 BY DAVID
+     * MAIN V2 BY DAVID
      * @author David Grieas - 14212 MetroBotics
-     **/
+    **/
     // positions
     public static double pivotCpos = 0.45;
     public static double hoodCpos = 0;
     public static double indexerCpos = 0;
+    public static double ascendCpos = 0;
     public static double ledCpos = 0.611;
     public static double turretTpos = 0;
     public static double shooterVelo = 0;
-    // presets
-    public static double blueShooter = 144;
-    public static double redShooter = 36;
-    // misc
-    private double wheelSpeed = wheelSpeedMax;
-    private boolean tReset = false;
-    private boolean tReset2 = false;
-    public static boolean shooterOn = true;
-    public static int shooterT = 3500;
     public double turretCpos;
+    // misc
+    private double wheelSpeed = 1;
+    public static boolean shooterOn = true;
+    public static boolean turretOn = true;
+    boolean indexerOn = true;
     // timers
     ElapsedTime loopTime;
-    ElapsedTime tResetT;
     // odometry
     public static boolean odoDrive = true;
     // config stuff
     public static boolean redSide = false;
     public static boolean debugMode = true;
-    public static double wheelSpeedMax = 1;
     public static double turretOffset = 0;
-    public static boolean turretOn = true;
     public static double backSpin = 0;
     public static double shooterOffset = -18;
-
     private final Prompter prompter = new Prompter(this);
-    boolean indexerOn = true;
     // hardware
     private TelemetryM telemetryM;
     private Follower follower;
     DigitalChannel beams;
-    PIDController turretPID;
     // gamepads
     Gamepad currentGamepad1;
     Gamepad currentGamepad2;
@@ -94,25 +90,28 @@ public class MainV1 extends OpMode {
     // motors
     CachingDcMotorEx leftFront; // 312 rpm --> 468 rpm
     CachingDcMotorEx leftRear; // 312 rpm --> 468 rpm
-    CachingDcMotorEx rightFront;
-    CachingDcMotorEx rightRear;
-    CachingDcMotorEx shooterL;
-    CachingDcMotorEx shooterR;
-    CachingDcMotorEx intake;
-    CachingDcMotorEx indexer;
+    CachingDcMotorEx rightFront; // 312 rpm --> 468 rpm
+    CachingDcMotorEx rightRear; // 312 rpm --> 468 rpm
+    CachingDcMotorEx shooterL; // 6000 rpm
+    CachingDcMotorEx shooterR; // 6000 rpm
+    CachingDcMotorEx intake; // 1150 rpm
+    CachingDcMotorEx indexer; // 1620 rpm
     // servos
     private static CachingServo pivot; // 1x axon max
-    private static CachingServo hood; // 1x axon mini
+    private static CombinedServo hood; // 2x axon mini
     private static CachingServo led; // 2x gobilda led lights RGB
-    private static CombinedCRServo turret; // 2x axon maxs
-
+    private static CombinedCRServo turret; // 2x axon mini
+    private static CombinedCRServo ascend; // 4x axon max
+    // random
+    GoBildaPrismDriver strips;
     @Override
     public void init() {
         if (MainV1E.lastAutoPos == null) prompter.prompt("alliance", new OptionPrompt<>("Select Alliance", MainV1E.Alliance.RED, MainV1E.Alliance.BLUE))
                 .prompt("start_pos", new OptionPrompt<>("Starting Position", MainV1E.StartPos.FAR, MainV1E.StartPos.CLOSE))
                 .onComplete(this::onPromptsComplete);
         // hardware
-        turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
+        PIDController turretPID = new PIDController(Math.sqrt(PIDTuneTurret.P), PIDTuneTurret.I, PIDTuneTurret.D);
+        PIDFCoefficients shooterPID = new PIDFCoefficients(PIDTuneShooterSdk.P,PIDTuneShooterSdk.I,PIDTuneShooterSdk.D,PIDTuneShooterSdk.F);
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
         telemetry = new MultipleTelemetry(telemetry, PanelsTelemetry.INSTANCE.getTelemetry().getWrapper());
         telemetryM = new TelemetryM(telemetry, debugMode);
@@ -121,6 +120,7 @@ public class MainV1 extends OpMode {
         // limelight3A.setPollRateHz(50);
         LynxUtils.initLynx(hardwareMap);
         beams = hardwareMap.get(DigitalChannel.class, "bb");
+        strips = hardwareMap.get(GoBildaPrismDriver.class,"strips");
         // gamepads
         currentGamepad1 = new Gamepad();
         currentGamepad2 = new Gamepad();
@@ -137,11 +137,18 @@ public class MainV1 extends OpMode {
         indexer = new CachingDcMotorEx(hardwareMap.get(DcMotorEx.class, "indexer")); // 1150 rpm
         // servos
         pivot = new CachingServo(hardwareMap.get(Servo.class, "intakePivot")); // 1x axon max
-        hood = new CachingServo(hardwareMap.get(Servo.class, "hood")); // 1x axon mini
-        CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1")); // 1x axon max
-        CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2")); // 1x axon max
+        CachingServo hoodR = new CachingServo(hardwareMap.get(Servo.class, "hoodR")); // 1x axon mini
+        CachingServo hoodL = new CachingServo(hardwareMap.get(Servo.class, "hoodL")); // 1x axon mini
+        hood = new CombinedServo(hoodR, hoodL); // 2x axon minis
+        CachingCRServo turret1 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret1")); // 1x axon mini
+        CachingCRServo turret2 = new CachingCRServo(hardwareMap.get(CRServo.class, "turret2")); // 1x axon mini
+        turret = new CombinedCRServo(turret1, turret2); // 2x axon minis
+        CachingCRServo aR1 = new CachingCRServo(hardwareMap.get(CRServo.class, "aR1")); // 1x axon max
+        CachingCRServo aR2 = new CachingCRServo(hardwareMap.get(CRServo.class, "aR2")); // 1x axon max
+        CachingCRServo aL1 = new CachingCRServo(hardwareMap.get(CRServo.class, "aL1")); // 1x axon max
+        CachingCRServo aL2 = new CachingCRServo(hardwareMap.get(CRServo.class, "aL2")); // 1x axon max
+        ascend = new CombinedCRServo(aR1, aR2, aL1, aL2); // 4x axon maxs
         led = new CachingServo(hardwareMap.get(Servo.class, "led")); // 2x gobilda led lights RGB
-        turret = new CombinedCRServo(turret1, turret2); // 2x axon maxs
         // limits
         pivot.scaleRange(0, 0.4);
         // turn on motor
@@ -164,6 +171,7 @@ public class MainV1 extends OpMode {
         gamepad1.setLedColor(0, 255, 255, -1);
         gamepad2.setLedColor(0, 255, 0, -1);
         LynxUtils.setLynxColor(255, 0, 255);
+        // do the strips
         // starting pos
         hood.setPosition(hoodCpos = 0);
         pivot.setPosition(pivotCpos = 0.45);
@@ -175,14 +183,15 @@ public class MainV1 extends OpMode {
         else indexer.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         indexer.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         MainV1E.lastTurretPos = -999;
+        // subsystems
+        TurretSS turretSS = new TurretSS(turretPID, PIDTuneTurret.F, turret, indexer, PIDTuneTurret.TPR, PIDTuneTurret.ratio, turretOffset, MainV1E.lastTurretPos);
+        ShooterSS shooterSS = new ShooterSS(shooterPID, shooterR, shooterL, hoodR, hoodL);
         // misc
         loopTime = new ElapsedTime();
-        tResetT = new ElapsedTime();
         follower.update();
         beams.setMode(DigitalChannel.Mode.INPUT);
         // reset
         loopTime.reset();
-        tResetT.reset();
     }
 
     public void onPromptsComplete() {
@@ -217,8 +226,8 @@ public class MainV1 extends OpMode {
     @Override
     public void loop() {
         // poses
-        Pose bluePos = new Pose(11, 137, Math.toRadians(blueShooter));
-        Pose redPos = new Pose(133, 137, Math.toRadians(redShooter));
+        Pose bluePos = new Pose(11, 137, 0);
+        Pose redPos = new Pose(133, 137, 0);
         Pose target = redSide ? redPos : bluePos;
         // variables
         telemetryM.setDebug(debugMode);

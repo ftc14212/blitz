@@ -151,6 +151,12 @@ public class TurretSS extends SubsystemBase {
                 )
         ) : 0;
     }
+    public void updateTurretTpos(double turretTpos) {
+        this.turretTpos = turretTpos;
+    }
+    public void setTurretOffset(double offset) {
+        this.offset = offset;
+    }
     public void setWrapAngles(int min, int max) {
         minWrap = min;
         maxWrap = max;

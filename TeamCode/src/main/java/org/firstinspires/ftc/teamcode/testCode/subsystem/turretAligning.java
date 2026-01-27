@@ -34,6 +34,7 @@ public class turretAligning extends OpMode {
     public boolean debugMode = true;
     public static double turretOffset = 0;
     public static double ledCpos = 1;
+    public static double turretTpos = 0;
     boolean redSide;
     TurretSS turretSS;
     TelemetryM telemetryM;
@@ -92,6 +93,8 @@ public class turretAligning extends OpMode {
     public void loop() {
         Gamepad gamepad1p = PanelsGamepad.INSTANCE.getFirstManager().asCombinedFTCGamepad(gamepad1);
         follower.setTeleOpDrive(-gamepad1p.left_stick_y, -gamepad1p.left_stick_x, -gamepad1p.right_stick_x, true);
+        if (turretSS.alignTurret() == 0 && turretTpos != 0) turretSS.updateTurretTpos(turretTpos);
+        else if (turretSS.alignTurret() != 0) turretTpos = turretSS.turretTpos;
         turretSS.update(follower);
         if (gamepad1p.left_bumper) {
             ledCpos = 0.388;
